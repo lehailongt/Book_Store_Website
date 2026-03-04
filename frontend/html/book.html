@@ -1,0 +1,214 @@
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sách - BookStore</title>
+    <link rel="stylesheet" href="../style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../css/book.css">
+    <script defer src="../javascript/header.js"></script>
+    <script defer src="../javascript/book.js"></script>
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="nav-logo">
+                <h2><i class="bi bi-book"></i> BookStore</h2>    
+            </div>
+            <div class="nav-menu">
+                <ul>
+                    <li><a href="./home.html"><i class="bi bi-house"></i> Trang Chủ</a></li>
+                    <li><a href="./book.html"><i class="bi bi-book"></i> Sách</a></li>
+                    <li><a href="./sell-book.html"><i class="bi bi-plus-lg"></i> Bán Sách</a></li>
+                    <li><a href="./cart.html"><i class="bi bi-cart"></i> Giỏ Hàng</a></li>
+                    <li><a href="./login.html"><i class="bi bi-person"></i> Đăng Nhập</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main class="books-main">
+        <div class="books-container">
+            <!-- Sidebar Filter -->
+            <aside class="books-sidebar">
+                <div class="filter-header">
+                    <h3><i class="bi bi-funnel"></i> Bộ Lọc</h3>
+                    <button class="btn-reset-filter" id="resetFilter">
+                        <i class="bi bi-arrow-clockwise"></i> Xóa
+                    </button>
+                </div>
+
+                <!-- Search by Name -->
+                <div class="filter-group">
+                    <label class="filter-label"><i class="bi bi-book"></i> Tên Sách</label>
+                    <input type="text" class="filter-input" id="searchName" placeholder="Nhập tên sách...">
+                </div>
+
+                <!-- Search by Book ID -->
+                <div class="filter-group">
+                    <label class="filter-label"><i class="bi bi-hash"></i> Mã ID Sách</label>
+                    <input type="text" class="filter-input" id="searchBookId" placeholder="Nhập mã ID...">
+                </div>
+
+                <!-- Search by Author -->
+                <div class="filter-group">
+                    <label class="filter-label"><i class="bi bi-person"></i> Tên Tác Giả</label>
+                    <input type="text" class="filter-input" id="searchAuthor" placeholder="Nhập tên tác giả...">
+                </div>
+
+                <!-- Search by Keywords -->
+                <div class="filter-group">
+                    <label class="filter-label"><i class="bi bi-search"></i> Từ Khóa Nội Dung</label>
+                    <input type="text" class="filter-input" id="searchKeywords" placeholder="Nhập từ khóa...">
+                </div>
+
+                <!-- Price Range -->
+                <div class="filter-group">
+                    <label class="filter-label"><i class="bi bi-tag"></i> Khoảng Giá</label>
+                    <div class="price-range">
+                        <input type="number" id="minPrice" class="price-input" placeholder="Từ" min="0" value="0">
+                        <span>-</span>
+                        <input type="number" id="maxPrice" class="price-input" placeholder="Đến" min="0" value="1000000">
+                    </div>
+                </div>
+
+                <!-- Categories (Multi-select) -->
+                <div class="filter-group">
+                    <label class="filter-label"><i class="bi bi-tag-fill"></i> Thể Loại</label>
+                    <div class="categories-list">
+                        <label class="checkbox-item">
+                            <input type="checkbox" value="fiction" class="category-checkbox">
+                            <span>Tiểu Thuyết</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" value="education" class="category-checkbox">
+                            <span>Giáo Dục</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" value="technology" class="category-checkbox">
+                            <span>Công Nghệ</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" value="history" class="category-checkbox">
+                            <span>Lịch Sử</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" value="business" class="category-checkbox">
+                            <span>Kinh Doanh</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" value="self-help" class="category-checkbox">
+                            <span>Kỹ Năng Sống</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" value="art" class="category-checkbox">
+                            <span>Nghệ Thuật</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" value="children" class="category-checkbox">
+                            <span>Trẻ Em</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Apply Filter Button -->
+                <button class="btn btn-apply-filter" id="applyFilter">
+                    <i class="bi bi-funnel"></i> Áp Dụng Bộ Lọc
+                </button>
+            </aside>
+
+            <!-- Main Content -->
+            <section class="books-content">
+                <!-- Header with Sort and View Options -->
+                <div class="books-header">
+                    <div class="books-info">
+                        <h2>Tất Cả Sách</h2>
+                        <p>Có <span id="totalBooks">0</span> cuốn sách</p>
+                    </div>
+                    <div class="books-controls">
+                        <select id="sortBy" class="form-control sort-select">
+                            <option value="newest">Mới Nhất</option>
+                            <option value="price-low">Giá: Thấp Đến Cao</option>
+                            <option value="price-high">Giá: Cao Đến Thấp</option>
+                            <option value="popular">Phổ Biến Nhất</option>
+                            <option value="rating">Đánh Giá Cao Nhất</option>
+                        </select>
+                        <div class="view-options">
+                            <button class="view-btn active" data-view="grid" title="Lưới">
+                                <i class="bi bi-grid-3x3-gap"></i>
+                            </button>
+                            <button class="view-btn" data-view="list" title="Danh Sách">
+                                <i class="bi bi-list-ul"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Books Grid -->
+                <div class="books-grid" id="booksContainer">
+                    <!-- Books will be loaded here by JavaScript -->
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination-container" id="paginationContainer">
+                    <!-- Pagination will be generated here -->
+                </div>
+
+                <!-- No Results -->
+                <div class="no-results" id="noResults" style="display: none;">
+                    <i class="bi bi-search"></i>
+                    <h3>Không Tìm Thấy Sách</h3>
+                    <p>Vui lòng thay đổi tiêu chí tìm kiếm</p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>Về BookStore</h3>
+                <ul>
+                    <li><a href="#">Giới Thiệu</a></li>
+                    <li><a href="#">Tìm Kiếm Sách</a></li>
+                    <li><a href="#">Blog</a></li>
+                    <li><a href="#">Tin Tức</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Hỗ Trợ</h3>
+                <ul>
+                    <li><a href="#">Liên Hệ Us</a></li>
+                    <li><a href="#">FAQ</a></li>
+                    <li><a href="#">Chính Sách</a></li>
+                    <li><a href="#">Điều Khoản</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Bán Sách</h3>
+                <ul>
+                    <li><a href="./sell-book.html">Bắt Đầu Bán</a></li>
+                    <li><a href="#">Hướng Dẫn</a></li>
+                    <li><a href="#">Phí Dịch Vụ</a></li>
+                    <li><a href="#">Liên Hệ Người Bán</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Liên Hệ</h3>
+                <ul>
+                    <li><i class="bi bi-telephone"></i> 1900-xxxx</li>
+                    <li><i class="bi bi-envelope"></i> info@bookstore.com</li>
+                    <li><i class="bi bi-geo-alt"></i> Việt Nam</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 BookStore. Tất cả quyền được bảo lưu.</p>
+        </div>
+    </footer>
+
+    <script src="../javascript/book.js"></script>
+</body>
+</html>

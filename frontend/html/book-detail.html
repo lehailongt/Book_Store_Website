@@ -1,0 +1,115 @@
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chi Tiết Sách - BookStore</title>
+    <link rel="stylesheet" href="../style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../css/book.css">
+    <link rel="stylesheet" href="../css/book-detail.css">
+    <script defer src="../javascript/header.js"></script>
+    <script defer src="../javascript/book-detail.js"></script>
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="nav-logo">
+                <h2><i class="bi bi-book"></i> BookStore</h2>    
+            </div>
+            <div class="nav-menu">
+                <ul>
+                    <li><a href="./home.html"><i class="bi bi-house"></i> Trang Chủ</a></li>
+                    <li><a href="./book.html"><i class="bi bi-book"></i> Sách</a></li>
+                    <li><a href="./sell-book.html"><i class="bi bi-plus-lg"></i> Bán Sách</a></li>
+                    <li><a href="./cart.html"><i class="bi bi-cart"></i> Giỏ Hàng</a></li>
+                    <li><a href="./login.html"><i class="bi bi-person"></i> Đăng Nhập</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main class="detail-main">
+        <div class="detail-container">
+            <div class="book-images">
+                <div class="main-image">
+                    <i class="bi bi-book"></i>
+                </div>
+                <div class="thumbs">
+                    <div class="thumb"><i class="bi bi-book"></i></div>
+                    <div class="thumb"><i class="bi bi-book"></i></div>
+                    <div class="thumb"><i class="bi bi-book"></i></div>
+                </div>
+            </div>
+            <div class="book-info">
+                <h1 class="title"></h1>
+                <p class="author"></p>
+                <div class="rating">
+                    <i class="bi bi-star-fill"></i> <span class="rating-value"></span> (<span class="reviews-count"></span> đánh giá)
+                </div>
+                <div class="price-section">
+                    <span class="price"></span> 
+                    <span class="original-price"></span>
+                </div>
+                <div class="quantity">
+                    <button class="qty-btn" id="qtyMinus">-</button>
+                    <input type="number" id="qtyInput" value="1" min="1">
+                    <button class="qty-btn" id="qtyPlus">+</button>
+                </div>
+                <div class="actions">
+                    <button class="btn btn-primary" id="buyBtn"><i class="bi bi-cart-plus"></i> Mua ngay</button>
+                    <button class="btn btn-outline-secondary" id="wishBtn"><i class="bi bi-heart"></i></button>
+                </div>
+                <p class="short-desc"></p>
+            </div>
+        </div>
+
+        <div class="book-details">
+            <h3>Thông Tin Chi Tiết</h3>
+            <table>
+                <tr><td>Tiêu đề</td><td class="detail-title"></td></tr>
+                <tr><td>Tác giả</td><td class="detail-author"></td></tr>
+                <tr><td>ISBN</td><td class="detail-isbn"></td></tr>
+                <tr><td>Ngôn ngữ</td><td class="detail-language"></td></tr>
+                <tr><td>Định dạng</td><td class="detail-format"></td></tr>
+                <tr><td>Ngày xuất bản</td><td class="detail-published"></td></tr>
+                <tr><td>Nhà xuất bản</td><td class="detail-publisher"></td></tr>
+            </table>
+        </div>
+
+        <div class="related-section">
+            <h3>Sách Liên Quan</h3>
+            <div class="related-books" id="relatedBooks"></div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section about">
+                <h2><i class="bi bi-book"></i> BookStore</h2>
+                <p>Một cửa hàng sách trực tuyến bán sách mọi thể loại.</p>
+            </div>
+            <div class="footer-section links">
+                <h3>Liên Kết</h3>
+                <ul>
+                    <li><a href="./home.html">Trang Chủ</a></li>
+                    <li><a href="./book.html">Sách</a></li>
+                    <li><a href="./sell-book.html">Bán Sách</a></li>
+                    <li><a href="./cart.html">Giỏ Hàng</a></li>
+                </ul>
+            </div>
+            <div class="footer-section contact">
+                <h3>Liên Hệ</h3>
+                <ul>
+                    <li><i class="bi bi-telephone"></i> 1900-xxxx</li>
+                    <li><i class="bi bi-envelope"></i> info@bookstore.com</li>
+                    <li><i class="bi bi-geo-alt"></i> Việt Nam</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 BookStore. Tất cả quyền được bảo lưu.</p>
+        </div>
+    </footer>
+</body>
+</html>

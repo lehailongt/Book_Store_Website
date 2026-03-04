@@ -1,0 +1,150 @@
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Ký - BookStore</title>
+    <link rel="stylesheet" href="../style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="../css/register.css">
+    <script defer src="../javascript/header.js"></script>
+    <script defer src="../javascript/register.js"></script>
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="nav-logo">
+                <h2><i class="bi bi-book"></i> BookStore</h2>    
+            </div>
+            <div class="nav-menu">
+                <ul>
+                    <li><a href="./home.html"><i class="bi bi-house"></i> Trang Chủ</a></li>
+                    <li><a href="./book.html"><i class="bi bi-book"></i> Sách</a></li>
+                    <li><a href="./login.html"><i class="bi bi-person"></i> Đăng Nhập</a></li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main class="auth-main">
+        <div class="auth-container">
+            <div class="auth-form-wrapper">
+                <div class="form-header">
+                    <h1><i class="bi bi-person-plus"></i> Đăng Ký Tài Khoản</h1>
+                    <p>Tạo tài khoản mới để bắt đầu bán sách</p>
+                </div>
+
+                <form id="registerForm" action="" method="post">
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="email" class="form-label"><i class="bi bi-envelope"></i> Email</label>
+                            <input type="text" class="form-control" id="email" name="email" placeholder="example@gmail.com" required>
+                            <div class="error"></div>
+                        </div>
+
+                        <div class="form-group col-md-6">
+                            <label for="phone" class="form-label"><i class="bi bi-telephone"></i> Số Điện Thoại</label>
+                            <input type="text" class="form-control" id="phone" name="phonenumber" placeholder="0123456789" required>
+                            <div class="error"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group fullname">
+                        <label for="fullname" class="form-label"><i class="bi bi-person"></i> Họ và Tên</label>
+                        <input type="text" class="form-control" id="fullname" name="fullname" placeholder="Nguyễn Văn A" required>
+                        <div class="error"></div>
+                    </div>
+
+                    <div class="form-group date">
+                        <label for="date" class="form-label"><i class="bi bi-calendar"></i> Ngày Sinh</label>
+                        <input type="date" class="form-control" id="date" name="date" required>
+                        <div class="error"></div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="password" class="form-label"><i class="bi bi-lock"></i> Mật Khẩu</label>
+                            <input type="password" class="form-control" id="password" name="password" placeholder="Nhập mật khẩu" required>
+                            <div class="error"></div>
+                        </div>
+
+                        <div class="form-group col-md-6">
+                            <label for="password2" class="form-label"><i class="bi bi-lock"></i> Xác Nhận Mật Khẩu</label>
+                            <input type="password" class="form-control" id="password2" name="password2" placeholder="Nhập lại mật khẩu" required>
+                            <div class="error"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-register">
+                            <i class="bi bi-check-circle"></i> Đăng Ký
+                        </button>
+                        <button type="reset" class="btn btn-reset">
+                            <i class="bi bi-arrow-clockwise"></i> Xóa
+                        </button>
+                    </div>
+                </form>
+
+                <div class="auth-links">
+                    <p>Đã có tài khoản? <a href="./login.html"><i class="bi bi-arrow-right"></i> Đăng nhập ngay</a></p>
+                </div>
+            </div>
+
+            <div class="auth-benefits">
+                <h3>Lợi Ích Khi Đăng Ký</h3>
+                <ul>
+                    <li><i class="bi bi-check-circle-fill"></i> Mua và bán sách dễ dàng</li>
+                    <li><i class="bi bi-check-circle-fill"></i> Quản lý đơn hàng của bạn</li>
+                    <li><i class="bi bi-check-circle-fill"></i> Theo dõi lịch sử mua hàng</li>
+                    <li><i class="bi bi-check-circle-fill"></i> Nhận ưu đãi và khuyến mãi</li>
+                    <li><i class="bi bi-check-circle-fill"></i> Hỗ trợ khách hàng 24/7</li>
+                </ul>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>Về BookStore</h3>
+                <ul>
+                    <li><a href="#">Giới Thiệu</a></li>
+                    <li><a href="#">Tìm Kiếm Sách</a></li>
+                    <li><a href="#">Blog</a></li>
+                    <li><a href="#">Tin Tức</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Hỗ Trợ</h3>
+                <ul>
+                    <li><a href="#">Liên Hệ Us</a></li>
+                    <li><a href="#">FAQ</a></li>
+                    <li><a href="#">Chính Sách</a></li>
+                    <li><a href="#">Điều Khoản</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Bán Sách</h3>
+                <ul>
+                    <li><a href="./sell-book.html">Bắt Đầu Bán</a></li>
+                    <li><a href="#">Hướng Dẫn</a></li>
+                    <li><a href="#">Phí Dịch Vụ</a></li>
+                    <li><a href="#">Liên Hệ Người Bán</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Liên Hệ</h3>
+                <ul>
+                    <li><i class="bi bi-telephone"></i> 1900-xxxx</li>
+                    <li><i class="bi bi-envelope"></i> info@bookstore.com</li>
+                    <li><i class="bi bi-geo-alt"></i> Việt Nam</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 BookStore. Tất cả quyền được bảo lưu.</p>
+        </div>
+    </footer>
+</body>
+</html>

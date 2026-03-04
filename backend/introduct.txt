@@ -1,0 +1,6 @@
+express
+cors
+bcrypt
+mysql2
+dotenv
+-D nodemon
