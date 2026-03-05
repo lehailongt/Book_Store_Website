@@ -1,0 +1,78 @@
+
+:root{
+  --sidebar-bg:#ffffff;
+  --sidebar-border:#e8e8ec;
+  --sidebar-text:#3c3f44;
+  --sidebar-muted:#8b8f96;
+  --primary:#ea6a1b;
+  --primary-600:#cc5e19;
+  --surface:#ffffff;
+  --surface-2:#f7f7f9;
+  --outline:#e8e8ec;
+  --text:#1f2328;
+  --muted:#6b7280;
+  --success:#22c55e;
+  --danger:#ef4444;
+  --warning:#f59e0b;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,"Apple Color Emoji","Segoe UI Emoji";background:var(--surface-2);color:var(--text)}
+
+/* Shell */
+.admin-shell{display:flex;min-height:100vh}
+.sidebar{width:260px;background:var(--sidebar-bg);border-right:1px solid var(--sidebar-border);display:flex;flex-direction:column}
+.sidebar .brand{display:flex;align-items:center;gap:10px;padding:20px 18px;border-bottom:1px solid var(--sidebar-border);font-weight:700}
+.sidebar .brand .logo{width:28px;height:28px;border-radius:8px;background:var(--primary);display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+.sidebar .section{padding:14px 18px 6px;color:var(--sidebar-muted);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.nav{padding:6px}
+.nav a{display:flex;align-items:center;gap:10px;padding:10px 12px;margin:4px 6px;border-radius:10px;color:var(--sidebar-text);text-decoration:none;font-weight:500}
+.nav a .dot{width:8px;height:8px;border-radius:999px;display:inline-block}
+.nav a:hover{background:#f2f2f5}
+.nav a.active{background:#f1efe7;color:#5a3418}
+.nav a.active .icon{color:var(--primary)}
+.sidebar .links{margin-top:auto;padding:10px}
+.sidebar .footer{margin-top:auto;padding:16px;border-top:1px solid var(--sidebar-border);font-size:12px;color:var(--sidebar-muted)}
+
+/* Main */
+.main{flex:1;display:flex;flex-direction:column}
+.topbar{height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;border-bottom:1px solid var(--outline);background:var(--surface)}
+.topbar .actions{display:flex;gap:10px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;border:1px solid var(--outline);background:#fff;color:var(--text);cursor:pointer}
+.btn-primary{background:var(--primary);border-color:var(--primary);color:#fff}
+.btn-primary:hover{background:var(--primary-600);border-color:var(--primary-600)}
+.btn-ghost{background:transparent}
+.content{padding:18px}
+.card{background:var(--surface);border:1px solid var(--outline);border-radius:14px;padding:14px}
+.cards{display:grid;grid-template-columns:repeat(12,1fr);gap:14px}
+.card.stat{grid-column:span 3}
+.card h3{margin:0 0 8px 0;font-size:14px;color:var(--muted)}
+.card .value{font-size:28px;font-weight:700}
+
+/* Table */
+.table-wrap{background:var(--surface);border:1px solid var(--outline);border-radius:14px;overflow:hidden}
+.table-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:12px;border-bottom:1px solid var(--outline)}
+.table{width:100%;border-collapse:separate;border-spacing:0}
+.table thead th{font-size:12px;color:var(--muted);text-align:left;padding:10px 12px;background:#fafafb;border-bottom:1px solid var(--outline)}
+.table tbody td{padding:10px 12px;border-bottom:1px solid var(--outline);font-size:14px;color:#333}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:999px;font-size:12px;border:1px solid var(--outline);background:#fff}
+.badge.success{color:#166534;border-color:#bbf7d0;background:#f0fdf4}
+.badge.warning{color:#7c2d12;border-color:#fed7aa;background:#fff7ed}
+.badge.info{color:#1e40af;border-color:#bfdbfe;background:#eff6ff}
+.badge.danger{color:#991b1b;border-color:#fecaca;background:#fef2f2}
+
+/* Utilities */
+.input, select{height:36px;padding:6px 10px;border:1px solid var(--outline);border-radius:10px;outline:none}
+.input:focus, select:focus{border-color:#c7cad1}
+.search{position:relative}
+.search .bi-search{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#9aa0a6}
+.search input{padding-left:30px}
+
+/* Responsive */
+@media (max-width: 1024px){
+  .card.stat{grid-column:span 6}
+}
+@media (max-width: 640px){
+  .admin-shell{flex-direction:column}
+  .sidebar{width:100%;border-right:none;border-bottom:1px solid var(--sidebar-border)}
+}

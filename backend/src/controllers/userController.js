@@ -62,7 +62,16 @@ class UserController {
                 full_name: user.full_name,
                 role: user.role
             };
-            return res.json({ message: 'Đăng nhập thành công', user: payload });
+
+            // Generate a simple demo token (Base64-URL). Note: For production use JWT instead.
+            const tokenPayload = {
+                id: payload.id,
+                role: payload.role,
+                iat: Math.floor(Date.now() / 1000)
+            };
+            const token = Buffer.from(JSON.stringify(tokenPayload)).toString('base64url');
+
+            return res.json({ message: 'Đăng nhập thành công', user: payload, token });
         } catch (error) {
             console.error(error);
             return res.status(500).json({ message: 'Lỗi máy chủ khi đăng nhập' });

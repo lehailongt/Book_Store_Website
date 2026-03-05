@@ -1,13 +1,9 @@
 (function () {
   'use strict';
 
-  //=========================
-  // Configuration
-  //=========================
   const ADMIN_API_BASE = '/api/admin';
   const PAGE_SIZE_DEFAULT = 10;
 
-  // Try to read token and current user from localStorage
   function getToken() {
     return (
       localStorage.getItem('accessToken') ||
@@ -24,9 +20,7 @@
       try {
         const obj = JSON.parse(raw);
         if (obj && typeof obj === 'object') return obj;
-      } catch (e) {
-        // ignore
-      }
+      } catch (e) {}
     }
     return null;
   }
@@ -35,41 +29,29 @@
     const token = getToken();
     const user = getCurrentUser();
     if (!token || !user || String(user.role).toLowerCase() !== 'admin') {
-      // Redirect to login if not admin
       window.location.href = './login.html';
       return false;
     }
     return true;
   }
 
-  //=========================
-  // Helpers
-  //=========================
   async function fetchAdmin(path, options = {}) {
     const url = `${ADMIN_API_BASE}${path}`;
     const token = getToken();
-
     const headers = Object.assign(
       {
         'Content-Type': 'application/json',
       },
       options.headers || {}
     );
-
     if (token) headers['Authorization'] = `Bearer ${token}`;
 
-    const res = await fetch(url, {
-      ...options,
-      headers,
-    });
+    const res = await fetch(url, { ...options, headers });
 
-    // Try to parse JSON body even for non-2xx for clearer error
     let data = null;
     try {
       data = await res.json();
-    } catch (e) {
-      // ignore non-json
-    }
+    } catch {}
 
     if (!res.ok) {
       const message = (data && (data.message || data.error)) || `HTTP ${res.status}`;
@@ -108,13 +90,9 @@
   }
 
   function showToast(message, type = 'info') {
-    // Minimal inline toast for now
     console[type === 'error' ? 'error' : 'log'](message);
   }
 
-  //=========================
-  // State
-  //=========================
   const state = {
     loading: false,
     page: 1,
@@ -122,44 +100,40 @@
     total: 0,
     filters: {
       keyword: '',
-      role: '',
-      status: '', // 'active' | 'locked' | ''
+      status: '', // Pending, Processing, Shipped, Completed, Canceled
+      from: '',
+      to: '',
     },
     rows: [],
   };
 
-  //=========================
-  // DOM Elements
-  //=========================
   const els = {};
 
   function cacheElements() {
     els.keyword = document.getElementById('keyword');
-    els.role = document.getElementById('role');
     els.status = document.getElementById('status');
+    els.from = document.getElementById('from-date');
+    els.to = document.getElementById('to-date');
     els.btnSearch = document.getElementById('btn-search');
     els.btnRefresh = document.getElementById('btn-refresh');
-    els.table = document.getElementById('user-table');
+    els.table = document.getElementById('order-table');
     els.tbody = els.table ? els.table.querySelector('tbody') : null;
     els.pagination = document.getElementById('pagination');
 
-    els.modal = document.getElementById('user-detail-modal');
+    els.modal = document.getElementById('order-detail-modal');
     if (els.modal) {
       els.modalClose = els.modal.querySelector('[data-close]');
-      els.detailAvatar = document.getElementById('detail-avatar');
       els.detailId = document.getElementById('detail-id');
-      els.detailName = document.getElementById('detail-name');
-      els.detailEmail = document.getElementById('detail-email');
-      els.detailRole = document.getElementById('detail-role');
+      els.detailCustomer = document.getElementById('detail-customer');
       els.detailStatus = document.getElementById('detail-status');
+      els.detailTotal = document.getElementById('detail-total');
       els.detailCreated = document.getElementById('detail-createdAt');
-      els.detailUpdated = document.getElementById('detail-updatedAt');
+      els.detailItems = document.getElementById('detail-items');
+      els.detailAddress = document.getElementById('detail-address');
+      els.detailPayment = document.getElementById('detail-payment');
     }
   }
 
-  //=========================
-  // Rendering
-  //=========================
   function renderLoading() {
     if (!els.tbody) return;
     els.tbody.innerHTML = `
@@ -178,47 +152,66 @@
     `;
   }
 
+  function statusBadge(status) {
+    const s = String(status || '').toLowerCase();
+    const map = {
+      pending: 'badge-warning',
+      processing: 'badge-info',
+      shipped: 'badge-primary',
+      completed: 'badge-success',
+      canceled: 'badge-danger',
+    };
+    const cls = map[s] || 'badge-secondary';
+    return `<span class="badge ${cls}">${escapeHtml(status || '')}</span>`;
+  }
+
   function renderRows() {
     if (!els.tbody) return;
     if (!state.rows || state.rows.length === 0) {
       renderEmpty();
       return;
     }
-
     const startIndex = (state.page - 1) * state.limit;
-    const indexOffset = startIndex;
 
     els.tbody.innerHTML = state.rows
-      .map((u, i) => {
-        const idx = indexOffset + i + 1;
-        const avatar = escapeHtml(u.avatar || '');
-        const name = escapeHtml(u.name || u.fullName || u.username || '');
-        const email = escapeHtml(u.email || '');
-        const role = escapeHtml(u.role || 'user');
-        const isActive = u.isActive !== false; // default true if missing
-        const createdAt = formatDate(u.createdAt || u.created_at);
+      .map((o, i) => {
+        const idx = startIndex + i + 1;
+        const id = o.id || o._id || '';
+        const code = o.code || id.slice(-8);
+        const customer = (o.customer && (o.customer.name || o.customer.email)) || o.customerName || o.userName || 'N/A';
+        const total = (o.totalAmount != null ? o.totalAmount : o.total) || 0;
+        const status = o.status || 'Pending';
+        const createdAt = formatDate(o.createdAt || o.created_at);
 
-        const statusBadge = isActive
-          ? '<span class="badge badge-success">Đang hoạt động</span>'
-          : '<span class="badge badge-danger">Đã khóa</span>';
-
-        const avatarHtml = avatar
-          ? `<img src="${avatar}" alt="avatar" class="avatar-sm" onerror="this.src='../images/pages/anonymous.png'" />`
-          : `<img src="../images/pages/anonymous.png" alt="avatar" class="avatar-sm" />`;
+        let nextActions = '';
+        const s = String(status).toLowerCase();
+        if (s === 'pending') {
+          nextActions = `
+            <button class="btn btn-link btn-status" data-next="Processing" title="Chuyển Processing"><i class="bi bi-play"></i></button>
+            <button class="btn btn-link btn-cancel" title="Hủy đơn"><i class="bi bi-x-circle"></i></button>
+          `;
+        } else if (s === 'processing') {
+          nextActions = `
+            <button class="btn btn-link btn-status" data-next="Shipped" title="Chuyển Shipped"><i class="bi bi-truck"></i></button>
+            <button class="btn btn-link btn-cancel" title="Hủy đơn"><i class="bi bi-x-circle"></i></button>
+          `;
+        } else if (s === 'shipped') {
+          nextActions = `
+            <button class="btn btn-link btn-status" data-next="Completed" title="Hoàn tất"><i class="bi bi-check2-circle"></i></button>
+          `;
+        }
 
         return `
-          <tr data-id="${escapeHtml(u.id || u._id || '')}">
+          <tr data-id="${escapeHtml(id)}">
             <td>${idx}</td>
-            <td>${avatarHtml}</td>
-            <td>${name}</td>
-            <td>${email}</td>
-            <td><span class="badge badge-role">${role}</span></td>
-            <td>${statusBadge}</td>
+            <td>#${escapeHtml(code)}</td>
+            <td>${escapeHtml(customer)}</td>
+            <td>${Number(total).toLocaleString('vi-VN')} đ</td>
+            <td>${statusBadge(status)}</td>
             <td>${createdAt}</td>
             <td>
               <button class="btn btn-link btn-view" title="Xem chi tiết"><i class="bi bi-eye"></i></button>
-              <button class="btn btn-link btn-toggle" title="Khóa/Mở khóa"><i class="bi bi-shield-lock"></i></button>
-              <button class="btn btn-link btn-role" title="Đổi vai trò"><i class="bi bi-person-gear"></i></button>
+              ${nextActions}
             </td>
           </tr>
         `;
@@ -228,7 +221,6 @@
 
   function renderPagination() {
     if (!els.pagination) return;
-
     const totalPages = Math.max(1, Math.ceil(state.total / state.limit));
     const page = Math.min(state.page, totalPages);
 
@@ -239,26 +231,17 @@
     let html = '';
     html += btn(Math.max(1, page - 1), '&laquo;', page <= 1);
 
-    // Simple pagination window
     const windowSize = 5;
     let start = Math.max(1, page - Math.floor(windowSize / 2));
     let end = Math.min(totalPages, start + windowSize - 1);
-    if (end - start + 1 < windowSize) {
-      start = Math.max(1, end - windowSize + 1);
-    }
-
-    for (let p = start; p <= end; p++) {
-      html += btn(p, String(p), false, p === page);
-    }
+    if (end - start + 1 < windowSize) start = Math.max(1, end - windowSize + 1);
+    for (let p = start; p <= end; p++) html += btn(p, String(p), false, p === page);
 
     html += btn(Math.min(totalPages, page + 1), '&raquo;', page >= totalPages);
 
     els.pagination.innerHTML = html;
   }
 
-  //=========================
-  // Modal
-  //=========================
   function openModal() {
     if (!els.modal) return;
     els.modal.setAttribute('aria-hidden', 'false');
@@ -271,43 +254,58 @@
     els.modal.classList.remove('open');
   }
 
-  function fillDetail(user) {
+  function fillDetail(order) {
     if (!els.modal) return;
-    const avatar = user.avatar || '';
-    els.detailAvatar.src = avatar || '../images/pages/anonymous.png';
-    els.detailId.textContent = user.id || user._id || '';
-    els.detailName.textContent = user.name || user.fullName || user.username || '';
-    els.detailEmail.textContent = user.email || '';
-    els.detailRole.textContent = user.role || 'user';
-    els.detailStatus.textContent = user.isActive !== false ? 'Đang hoạt động' : 'Đã khóa';
-    els.detailCreated.textContent = formatDate(user.createdAt || user.created_at);
-    els.detailUpdated.textContent = formatDate(user.updatedAt || user.updated_at);
+
+    const id = order.id || order._id || '';
+    const code = order.code || id.slice(-8);
+    els.detailId.textContent = `#${code}`;
+    const customer = (order.customer && (order.customer.name || order.customer.email)) || order.customerName || order.userName || 'N/A';
+    els.detailCustomer.textContent = customer;
+    els.detailStatus.innerHTML = statusBadge(order.status || 'Pending');
+    els.detailTotal.textContent = `${Number(order.totalAmount != null ? order.totalAmount : order.total || 0).toLocaleString('vi-VN')} đ`;
+    els.detailCreated.textContent = formatDate(order.createdAt || order.created_at);
+
+    // Items
+    const items = order.items || order.orderItems || [];
+    els.detailItems.innerHTML = items
+      .map((it) => {
+        const title = (it.book && (it.book.title || it.book.name)) || it.title || it.name || 'Sản phẩm';
+        const price = it.price != null ? it.price : it.unitPrice || 0;
+        const qty = it.quantity != null ? it.quantity : it.qty || 1;
+        return `<li>${escapeHtml(title)} - ${Number(price).toLocaleString('vi-VN')} đ x ${qty}</li>`;
+      })
+      .join('');
+
+    // Address
+    const addr = order.address || order.shippingAddress || {};
+    const fullAddr = [addr.line1, addr.line2, addr.ward, addr.district, addr.province]
+      .filter(Boolean)
+      .join(', ');
+    els.detailAddress.textContent = fullAddr || '—';
+
+    // Payment
+    const payment = order.payment || order.paymentMethod || 'COD';
+    els.detailPayment.textContent = payment;
   }
 
-  //=========================
-  // Data loading
-  //=========================
-  async function loadUsers({ page = 1, limit = state.limit } = {}) {
+  async function loadOrders({ page = 1, limit = state.limit } = {}) {
     if (state.loading) return;
     state.loading = true;
     state.page = page;
     state.limit = limit;
-
     renderLoading();
 
     const params = new URLSearchParams();
     if (state.filters.keyword) params.set('keyword', state.filters.keyword.trim());
-    if (state.filters.role) params.set('role', state.filters.role);
     if (state.filters.status) params.set('status', state.filters.status);
+    if (state.filters.from) params.set('from', state.filters.from);
+    if (state.filters.to) params.set('to', state.filters.to);
     params.set('page', String(state.page));
     params.set('limit', String(state.limit));
 
     try {
-      const data = await fetchAdmin(`/users?${params.toString()}`, {
-        method: 'GET',
-      });
-
-      // Expect either { data, total, page, limit } or array
+      const data = await fetchAdmin(`/orders?${params.toString()}`, { method: 'GET' });
       let rows = [];
       let total = 0;
 
@@ -317,7 +315,6 @@
       } else if (data && typeof data === 'object') {
         rows = data.data || data.items || data.results || [];
         total = data.total != null ? Number(data.total) : rows.length;
-        // If server paginates, keep page and limit from server if provided
         if (data.page) state.page = Number(data.page) || state.page;
         if (data.limit) state.limit = Number(data.limit) || state.limit;
       }
@@ -329,94 +326,81 @@
       renderPagination();
     } catch (err) {
       console.error(err);
-      showToast(err.message || 'Tải danh sách người dùng thất bại', 'error');
+      showToast(err.message || 'Tải danh sách đơn hàng thất bại', 'error');
       renderEmpty();
     } finally {
       state.loading = false;
     }
   }
 
-  //=========================
-  // Actions
-  //=========================
-  async function toggleActive(userId) {
-    if (!userId) return;
-    if (!confirm('Bạn có chắc muốn khóa/mở khóa tài khoản này?')) return;
+  async function updateStatus(orderId, next) {
+    if (!orderId) return;
+    if (!next) return;
+    if (!confirm(`Xác nhận cập nhật trạng thái đơn sang: ${next}?`)) return;
 
     try {
-      await fetchAdmin(`/users/${encodeURIComponent(userId)}/toggle-active`, {
+      await fetchAdmin(`/orders/${encodeURIComponent(orderId)}/status`, {
         method: 'PATCH',
+        body: JSON.stringify({ status: next }),
       });
       showToast('Cập nhật trạng thái thành công', 'info');
-      await loadUsers({ page: state.page });
+      await loadOrders({ page: state.page });
     } catch (err) {
       console.error(err);
       showToast(err.message || 'Cập nhật trạng thái thất bại', 'error');
     }
   }
 
-  async function changeRole(userId, currentRole) {
-    if (!userId) return;
-    const next = prompt(
-      `Nhập vai trò mới cho user (admin/user). Hiện tại: ${currentRole || 'user'}`,
-      currentRole || 'user'
-    );
-    if (!next) return;
-    const role = String(next).trim().toLowerCase();
-    if (!['admin', 'user'].includes(role)) {
-      alert('Vai trò không hợp lệ. Chỉ chấp nhận: admin hoặc user');
-      return;
-    }
-
+  async function cancelOrder(orderId) {
+    if (!orderId) return;
+    if (!confirm('Xác nhận hủy đơn hàng này?')) return;
     try {
-      await fetchAdmin(`/users/${encodeURIComponent(userId)}/role`, {
+      await fetchAdmin(`/orders/${encodeURIComponent(orderId)}/status`, {
         method: 'PATCH',
-        body: JSON.stringify({ role }),
+        body: JSON.stringify({ status: 'Canceled' }),
       });
-      showToast('Cập nhật vai trò thành công', 'info');
-      await loadUsers({ page: state.page });
+      showToast('Đã hủy đơn hàng', 'info');
+      await loadOrders({ page: state.page });
     } catch (err) {
       console.error(err);
-      showToast(err.message || 'Cập nhật vai trò thất bại', 'error');
+      showToast(err.message || 'Hủy đơn thất bại', 'error');
     }
   }
 
-  async function viewDetail(userId) {
-    if (!userId) return;
+  async function viewDetail(orderId) {
+    if (!orderId) return;
     try {
-      const user = await fetchAdmin(`/users/${encodeURIComponent(userId)}`, {
-        method: 'GET',
-      });
-      fillDetail(user && user.data ? user.data : user);
+      const data = await fetchAdmin(`/orders/${encodeURIComponent(orderId)}`, { method: 'GET' });
+      const order = data && data.data ? data.data : data;
+      fillDetail(order);
       openModal();
     } catch (err) {
       console.error(err);
-      showToast(err.message || 'Tải chi tiết người dùng thất bại', 'error');
+      showToast(err.message || 'Tải chi tiết đơn thất bại', 'error');
     }
   }
 
-  //=========================
-  // Event bindings
-  //=========================
   function bindEvents() {
     if (els.btnSearch) {
       els.btnSearch.addEventListener('click', () => {
         state.page = 1;
         state.filters.keyword = (els.keyword.value || '').trim();
-        state.filters.role = els.role.value || '';
         state.filters.status = els.status.value || '';
-        loadUsers({ page: 1 });
+        state.filters.from = els.from.value || '';
+        state.filters.to = els.to.value || '';
+        loadOrders({ page: 1 });
       });
     }
 
     if (els.btnRefresh) {
       els.btnRefresh.addEventListener('click', () => {
         els.keyword.value = '';
-        els.role.value = '';
         els.status.value = '';
-        state.filters = { keyword: '', role: '', status: '' };
+        els.from.value = '';
+        els.to.value = '';
+        state.filters = { keyword: '', status: '', from: '', to: '' };
         state.page = 1;
-        loadUsers({ page: 1 });
+        loadOrders({ page: 1 });
       });
     }
 
@@ -426,24 +410,32 @@
         debounce(() => {
           state.page = 1;
           state.filters.keyword = (els.keyword.value || '').trim();
-          loadUsers({ page: 1 });
+          loadOrders({ page: 1 });
         }, 500)
       );
-    }
-
-    if (els.role) {
-      els.role.addEventListener('change', () => {
-        state.page = 1;
-        state.filters.role = els.role.value || '';
-        loadUsers({ page: 1 });
-      });
     }
 
     if (els.status) {
       els.status.addEventListener('change', () => {
         state.page = 1;
         state.filters.status = els.status.value || '';
-        loadUsers({ page: 1 });
+        loadOrders({ page: 1 });
+      });
+    }
+
+    if (els.from) {
+      els.from.addEventListener('change', () => {
+        state.page = 1;
+        state.filters.from = els.from.value || '';
+        loadOrders({ page: 1 });
+      });
+    }
+
+    if (els.to) {
+      els.to.addEventListener('change', () => {
+        state.page = 1;
+        state.filters.to = els.to.value || '';
+        loadOrders({ page: 1 });
       });
     }
 
@@ -453,27 +445,22 @@
         if (!btn) return;
         const page = Number(btn.getAttribute('data-page')) || 1;
         if (page === state.page) return;
-        loadUsers({ page });
+        loadOrders({ page });
       });
     }
 
     if (els.table) {
       els.table.addEventListener('click', (e) => {
-        const btnView = e.target.closest('.btn-view');
-        const btnToggle = e.target.closest('.btn-toggle');
-        const btnRole = e.target.closest('.btn-role');
         const tr = e.target.closest('tr[data-id]');
         if (!tr) return;
-        const userId = tr.getAttribute('data-id');
-
-        if (btnView) {
-          viewDetail(userId);
-        } else if (btnToggle) {
-          toggleActive(userId);
-        } else if (btnRole) {
-          const currentRoleEl = tr.querySelector('.badge-role');
-          const currentRole = currentRoleEl ? currentRoleEl.textContent.trim() : 'user';
-          changeRole(userId, currentRole);
+        const orderId = tr.getAttribute('data-id');
+        if (e.target.closest('.btn-view')) {
+          viewDetail(orderId);
+        } else if (e.target.closest('.btn-status')) {
+          const next = e.target.closest('.btn-status').getAttribute('data-next');
+          updateStatus(orderId, next);
+        } else if (e.target.closest('.btn-cancel')) {
+          cancelOrder(orderId);
         }
       });
     }
@@ -487,14 +474,11 @@
     }
   }
 
-  //=========================
-  // Init
-  //=========================
   function init() {
     if (!ensureAdmin()) return;
     cacheElements();
     bindEvents();
-    loadUsers({ page: 1 });
+    loadOrders({ page: 1 });
   }
 
   if (document.readyState === 'loading') {

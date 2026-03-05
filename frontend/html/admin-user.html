@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Admin - Orders</title>
+  <title>Admin - Users</title>
   <link rel="icon" type="image/x-icon" href="../images/pages/icon-website.png" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
   <link rel="stylesheet" href="../admin-style.css" />
-  <link rel="stylesheet" href="../css/admin-order.css" />
-  <script defer src="../javascript/admin-order.js"></script>
+  <link rel="stylesheet" href="../css/admin-book.css" />
+  <script defer src="../javascript/admin-user.js"></script>
 </head>
 <body>
 <div class="admin-shell">
@@ -30,7 +30,7 @@
 
 <main class="main">
   <div class="topbar">
-    <div class="title"><strong>Order</strong></div>
+    <div class="title"><strong>User</strong></div>
     <div class="actions">
       <button id="btn-refresh" class="btn"><i class="bi bi-arrow-clockwise"></i> Tải lại</button>
     </div>
@@ -38,27 +38,28 @@
   <div class="content">
     <div class="table-wrap">
       <div class="table-toolbar">
-        <div class="search"><i class="bi bi-search"></i><input id="keyword" class="input" placeholder="Mã đơn, tên khách, email..."/></div>
-        <select id="status">
-          <option value="">Tất cả</option>
-          <option value="Pending">Pending</option>
-          <option value="Processing">Processing</option>
-          <option value="Shipped">Shipped</option>
-          <option value="Completed">Completed</option>
-          <option value="Canceled">Canceled</option>
+        <div class="search"><i class="bi bi-search"></i><input id="keyword" class="input" placeholder="Tên, email..."/></div>
+        <select id="role">
+          <option value="">Tất cả vai trò</option>
+          <option value="admin">Admin</option>
+          <option value="user">User</option>
         </select>
-        <input type="date" id="from-date" />
-        <input type="date" id="to-date" />
+        <select id="status">
+          <option value="">Trạng thái</option>
+          <option value="active">Đang hoạt động</option>
+          <option value="locked">Đã khóa</option>
+        </select>
         <button id="btn-search" class="btn">Lọc</button>
         <div style="margin-left:auto"></div>
       </div>
-      <table class="table" id="order-table">
+      <table class="table" id="user-table">
         <thead>
           <tr>
             <th>#</th>
-            <th>Mã đơn</th>
-            <th>Khách hàng</th>
-            <th>Tổng tiền</th>
+            <th>Avatar</th>
+            <th>Tên</th>
+            <th>Email</th>
+            <th>Vai trò</th>
             <th>Trạng thái</th>
             <th>Ngày tạo</th>
             <th>Thao tác</th>

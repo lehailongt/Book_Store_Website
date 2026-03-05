@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin - Dashboard</title>
+  <link rel="icon" type="image/x-icon" href="../images/pages/icon-website.png" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+  <link rel="stylesheet" href="../admin-style.css" />
+  <link rel="stylesheet" href="../css/admin-dashboard.css" />
+  <script defer src="../javascript/admin-dashboard.js"></script>
+</head>
+<body>
+<div class="admin-shell">
+
+<aside class="sidebar">
+  <div class="brand">
+    <span class="logo">LT</span> 
+    <span>Admin</span>
+  </div>
+  <div class="section">Menu</div>
+  <nav class="nav">
+    <a href="./admin-dashboard.html" class="active"><i class="bi bi-grid icon"></i>Dashboard</a>
+    <a href="./admin-order.html"><i class="bi bi-receipt icon"></i>Order</a>
+    <a href="./admin-user.html"><i class="bi bi-people icon"></i>User</a>
+    <a href="./admin-book.html"><i class="bi bi-book icon"></i>Book</a>
+    <a href="./login.html"><i class="bi bi-box-arrow-right"></i>Logout</a>
+  </nav>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div class="title"><strong>Dashboard</strong></div>
+    <div class="actions">
+      <button class="btn btn-ghost"><i class="bi bi-bell"></i></button>
+      <button class="btn btn-primary"><i class="bi bi-plus"></i> Create</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="cards">
+      <div class="card stat">
+        <h3>Tổng đơn hàng</h3>
+        <div class="value">1,284</div>
+      </div>
+      <div class="card stat">
+        <h3>Doanh thu</h3>
+        <div class="value">₫ 128,400,000</div>
+      </div>
+      <div class="card stat">
+        <h3>Khách hàng mới</h3>
+        <div class="value">312</div>
+      </div>
+      <div class="card stat">
+        <h3>Sách đang bán</h3>
+        <div class="value">984</div>
+      </div>
+    </div>
+
+    <div style="height:14px"></div>
+
+    <div class="table-wrap">
+      <div class="table-toolbar">
+        <strong>Đơn hàng gần đây</strong>
+        <div style="margin-left:auto" class="search"><i class="bi bi-search"></i><input class="input" placeholder="Search"/></div>
+        <select>
+          <option>Status</option>
+          <option>Pending</option>
+          <option>Shipped</option>
+          <option>Completed</option>
+        </select>
+      </div>
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Order ID</th>
+            <th>Order Number</th>
+            <th>Status</th>
+            <th>Item</th>
+            <th>Customer Name</th>
+            <th>Shipping Service</th>
+            <th>Tracking code</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>59217</td>
+            <td>59217342</td>
+            <td><span class="badge info">New order</span></td>
+            <td>1</td>
+            <td>Cody Fisher</td>
+            <td><span class="dot" style="background:#6b7280;margin-right:8px"></span>Standard</td>
+            <td>940010010936113003113</td>
+          </tr>
+          <tr>
+            <td>59213</td>
+            <td>59217343</td>
+            <td><span class="badge warning">Inproduction</span></td>
+            <td>2</td>
+            <td>Kristin Watson</td>
+            <td><span class="dot" style="background:#ef4444;margin-right:8px"></span>Priority</td>
+            <td>940010010936113003113</td>
+          </tr>
+          <tr>
+            <td>59219</td>
+            <td>59217344</td>
+            <td><span class="badge success">Shipped</span></td>
+            <td>12</td>
+            <td>Esther Howard</td>
+            <td><span class="dot" style="background:#2563eb;margin-right:8px"></span>Express</td>
+            <td>940010010936113003113</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+</div>
+</body>
+</html>

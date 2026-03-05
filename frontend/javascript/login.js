@@ -34,17 +34,28 @@ loginForm.addEventListener('submit', async (e) => {
         });
         const data = await response.json();
         if (response.ok) {
-            // store returned user info if provided
+            // Lưu thông tin user
             if (data.user) {
                 localStorage.setItem('currentUser', JSON.stringify(data.user));
             } else {
                 const user = { email: emailValue, name: data.name || '' };
                 localStorage.setItem('currentUser', JSON.stringify(user));
             }
+            // Lưu token để trang admin sử dụng
+            if (data.token) {
+                localStorage.setItem('accessToken', data.token);
+                localStorage.setItem('token', data.token);
+            }
+
             showSuccess(data.message || 'Đăng nhập thành công!');
+
+            // Chuyển hướng theo role (đường dẫn tương đối từ login.html)
+            const role = (data.user && (data.user.role || data.user.Role)) ? String(data.user.role || data.user.Role).toLowerCase() : '';
+            const target = role === 'admin' ? './admin-user.html' : './home.html';
+
             setTimeout(() => {
-                window.location.href = '../html/home.html';
-            }, 1000);
+                window.location.href = target;
+            }, 600);
         } else {
             showError(data.message || 'Đăng nhập thất bại');
         }
