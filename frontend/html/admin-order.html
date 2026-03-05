@@ -31,21 +31,19 @@
 <main class="main">
   <div class="topbar">
     <div class="title"><strong>Order</strong></div>
-    <div class="actions">
-      <button id="btn-refresh" class="btn"><i class="bi bi-arrow-clockwise"></i> Tải lại</button>
-    </div>
   </div>
   <div class="content">
     <div class="table-wrap">
       <div class="table-toolbar">
-        <div class="search"><i class="bi bi-search"></i><input id="keyword" class="input" placeholder="Mã đơn, tên khách, email..."/></div>
+        <div class="search">
+          <i class="bi bi-search"></i>
+          <input id="keyword" class="input" placeholder="Nhập mã đơn hàng"/>
+        </div>
         <select id="status">
-          <option value="">Tất cả</option>
-          <option value="Pending">Pending</option>
-          <option value="Processing">Processing</option>
-          <option value="Shipped">Shipped</option>
-          <option value="Completed">Completed</option>
-          <option value="Canceled">Canceled</option>
+          <option value="">Trạng thái</option>
+          <option value="Đang giao">Đang giao</option>
+          <option value="Đã giao">Đã giao</option>
+          <option value="Hủy bỏ">Hủy bỏ</option>
         </select>
         <input type="date" id="from-date" />
         <input type="date" id="to-date" />
@@ -55,7 +53,6 @@
       <table class="table" id="order-table">
         <thead>
           <tr>
-            <th>#</th>
             <th>Mã đơn</th>
             <th>Khách hàng</th>
             <th>Tổng tiền</th>

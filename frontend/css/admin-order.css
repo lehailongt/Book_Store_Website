@@ -1,0 +1,271 @@
+/* File: css/admin-order.css */
+
+/* Định dạng input date */
+input[type="date"] {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 10px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #1f2937;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 160px;
+  position: relative;
+  outline: none;
+}
+
+/* Hover effect */
+input[type="date"]:hover {
+  border-color: #9ca3af;
+}
+
+/* Focus effect */
+input[type="date"]:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Custom icon cho date input */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  background: transparent;
+  padding: 4px;
+  cursor: pointer;
+  border-radius: 4px;
+  margin-left: 8px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  background-color: #f3f4f6;
+}
+
+/* Định dạng placeholder khi chưa chọn ngày */
+input[type="date"]:invalid {
+  color: #9ca3af;
+}
+
+input[type="date"]::-webkit-datetime-edit-text {
+  color: #6b7280;
+  padding: 0 2px;
+}
+
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-year-field {
+  color: #1f2937;
+  padding: 0 2px;
+}
+
+/* Khi chưa có giá trị */
+input[type="date"]:invalid::-webkit-datetime-edit {
+  color: #9ca3af;
+}
+
+/* Container cho date range */
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 16px 20px;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Style cho label ngày tháng (nếu muốn thêm) */
+.date-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #4b5563;
+  margin-right: 4px;
+}
+
+/* Group 2 date inputs lại với nhau */
+.date-range-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f9fafb;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+.date-range-group input[type="date"] {
+  border: none;
+  background: transparent;
+  padding: 8px 12px;
+  min-width: 140px;
+}
+
+.date-range-group input[type="date"]:focus {
+  box-shadow: none;
+  background: white;
+  border-radius: 8px;
+}
+
+.date-separator {
+  color: #9ca3af;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+/* Style cho các filter khác để đồng bộ */
+.table-toolbar select,
+.table-toolbar .input {
+  padding: 10px 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+  background: white;
+  min-width: 140px;
+}
+
+.table-toolbar select:hover,
+.table-toolbar .input:hover {
+  border-color: #9ca3af;
+}
+
+.table-toolbar select:focus,
+.table-toolbar .input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Style cho search input */
+.search {
+  position: relative;
+  flex: 1;
+  min-width: 250px;
+}
+
+.search i {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  font-size: 15px;
+}
+
+.search .input {
+  width: 100%;
+  padding-left: 42px;
+}
+
+/* Style cho button Lọc */
+#btn-search {
+  padding: 10px 24px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: auto;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
+}
+
+#btn-search:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
+}
+
+#btn-search:active {
+  transform: translateY(0);
+}
+
+/* Style cho ngày tháng trong table */
+.table td:nth-child(5) {
+  color: #6b7280;
+  font-size: 13px;
+  white-space: nowrap;
+  font-family: 'Courier New', monospace;
+  font-weight: 500;
+}
+
+/* Format ngày tháng đẹp hơn - thêm icon calendar nhỏ */
+.table td:nth-child(5)::before {
+  content: '📅';
+  font-size: 12px;
+  margin-right: 6px;
+  opacity: 0.6;
+}
+
+/* Hoặc dùng icon từ Bootstrap Icons */
+.table td:nth-child(5) i {
+  font-size: 12px;
+  margin-right: 4px;
+  color: #9ca3af;
+}
+
+/* Responsive cho mobile */
+@media (max-width: 768px) {
+  .table-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  input[type="date"],
+  .table-toolbar select,
+  .table-toolbar .input,
+  .search,
+  #btn-search {
+    width: 100%;
+    min-width: 100%;
+  }
+  
+  .date-range-group {
+    flex-direction: column;
+    background: transparent;
+    border: none;
+    gap: 8px;
+  }
+  
+  .date-range-group input[type="date"] {
+    width: 100%;
+    background: white;
+    border: 2px solid #e5e7eb;
+  }
+  
+  .date-separator {
+    display: none;
+  }
+  
+  #btn-search {
+    margin-left: 0;
+  }
+}
+
+/* Animation nhẹ khi focus */
+@keyframes focusPulse {
+  0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+  70% { box-shadow: 0 0 0 5px rgba(37, 99, 235, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+}
+
+input[type="date"]:focus {
+  animation: focusPulse 0.5s ease-out;
+}
+
+/* Style cho placeholder */
+input[type="date"]::-webkit-datetime-edit-text {
+  color: #9ca3af;
+}
+
+input[type="date"]::-webkit-datetime-edit-month-field[disabled],
+input[type="date"]::-webkit-datetime-edit-day-field[disabled],
+input[type="date"]::-webkit-datetime-edit-year-field[disabled] {
+  color: #d1d5db;
+}

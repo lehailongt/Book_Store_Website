@@ -1,8 +1,6 @@
-/* Detail page layout */
+
 .detail-main {
-    flex: 1;
     padding: 40px 20px;
-    background-color: var(--bg-light);
 }
 
 .detail-container {
