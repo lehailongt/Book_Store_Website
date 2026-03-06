@@ -6,126 +6,38 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="../style.css">
     <link rel="stylesheet" href="../css/login.css">
-    <script defer src="../javascript/header.js"></script>
     <script defer src="../javascript/login.js"></script>
 </head>
 <body>
 
-    <header>
-        <nav class="navbar">
-            <div class="nav-logo">
-                <h2><i class="bi bi-book"></i> BookStore</h2>    
-            </div>
-            <div class="nav-menu">
-                <ul>
-                    <li><a href="./home.html"><i class="bi bi-house"></i> Trang Chủ</a></li>
-                    <li><a href="./book.html"><i class="bi bi-book"></i> Sách</a></li>
-                    <li><a href="./register.html"><i class="bi bi-person-plus"></i> Đăng Ký</a></li>
-                </ul>
-            </div>
-        </nav>
-    </header>
-
-    <main class="auth-main">
-        <div class="login-container">
-            <div class="login-wrapper">
-                <div class="form-header">
-                    <h1><i class="bi bi-box-arrow-in-right"></i> Đăng Nhập</h1>
-                    <p>Đăng nhập để truy cập tài khoản của bạn</p>
-                </div>
-
-                <form id="loginForm" action="" method="post">
-                    <div class="form-group">
-                        <label for="email" class="form-label"><i class="bi bi-envelope"></i> Email</label>
-                        <input type="text" class="form-control" id="email" name="email" placeholder="your.email@gmail.com" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="password" class="form-label"><i class="bi bi-lock"></i> Mật Khẩu</label>
-                        <input type="password" class="form-control" id="password" name="password" placeholder="Nhập mật khẩu" required>
-                    </div>
-
-                    <div class="form-remember">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="remember" name="remember">
-                            <span>Ghi nhớ tôi</span>
-                        </label>
-                        <a href="./forgot-password.html" class="forgot-link"><i class="bi bi-question-circle"></i> Quên mật khẩu?</a>
-                    </div>
-
-                    <button type="submit" class="btn btn-login" id="login-button">
-                        <i class="bi bi-check-circle"></i> Đăng Nhập
-                    </button>
-                </form>
-
-                <div class="auth-links">
-                    <p>Chưa có tài khoản? <a href="./register.html"><i class="bi bi-arrow-right"></i> Đăng ký ngay</a></p>
-                </div>
-            </div>
-
-            <div class="login-benefits">
-                <div class="benefit-card">
-                    <i class="bi bi-box2-heart"></i>
-                    <h3>Mua Sách Dễ Dàng</h3>
-                    <p>Khám phá hàng ngàn cuốn sách từ các tác giả yêu thích</p>
-                </div>
-                <div class="benefit-card">
-                    <i class="bi bi-graph-up"></i>
-                    <h3>Bán Sách Kiếm Tiền</h3>
-                    <p>Chia sẻ các cuốn sách cũ của bạn và kiếm thêm thu nhập</p>
-                </div>
-                <div class="benefit-card">
-                    <i class="bi bi-chat-dots"></i>
-                    <h3>Cộng Đồng Sách</h3>
-                    <p>Kết nối với những người yêu thích sách giống bạn</p>
-                </div>
-            </div>
+<main>
+    <div class="login-container">
+        <div class="form-header">
+            <h1><i class="bi bi-box-arrow-in-right"></i> Đăng Nhập</h1>
+            <p>Đăng nhập để truy cập tài khoản của bạn</p>
         </div>
-    </main>
 
-    <!-- Footer -->
-    <footer>
-        <div class="footer-content">
-            <div class="footer-section">
-                <h3>Về BookStore</h3>
-                <ul>
-                    <li><a href="#">Giới Thiệu</a></li>
-                    <li><a href="#">Tìm Kiếm Sách</a></li>
-                    <li><a href="#">Blog</a></li>
-                    <li><a href="#">Tin Tức</a></li>
-                </ul>
+        <form id="loginForm" action="" method="post">
+            <div class="form-group">
+                <label for="email" class="form-label"><i class="bi bi-envelope"></i> Email</label>
+                <input type="text" class="form-control" id="email" name="email" placeholder="your.email@gmail.com" required>
             </div>
-            <div class="footer-section">
-                <h3>Hỗ Trợ</h3>
-                <ul>
-                    <li><a href="#">Liên Hệ Us</a></li>
-                    <li><a href="#">FAQ</a></li>
-                    <li><a href="#">Chính Sách</a></li>
-                    <li><a href="#">Điều Khoản</a></li>
-                </ul>
+
+            <div class="form-group">
+                <label for="password" class="form-label"><i class="bi bi-lock"></i> Mật Khẩu</label>
+                <input type="password" class="form-control" id="password" name="password" placeholder="Nhập mật khẩu" required>
             </div>
-            <div class="footer-section">
-                <h3>Bán Sách</h3>
-                <ul>
-                    <li><a href="./sell-book.html">Bắt Đầu Bán</a></li>
-                    <li><a href="#">Hướng Dẫn</a></li>
-                    <li><a href="#">Phí Dịch Vụ</a></li>
-                    <li><a href="#">Liên Hệ Người Bán</a></li>
-                </ul>
-            </div>
-            <div class="footer-section">
-                <h3>Liên Hệ</h3>
-                <ul>
-                    <li><i class="bi bi-telephone"></i> 1900-xxxx</li>
-                    <li><i class="bi bi-envelope"></i> info@bookstore.com</li>
-                    <li><i class="bi bi-geo-alt"></i> Việt Nam</li>
-                </ul>
-            </div>
+
+            <button type="submit" class="btn btn-login" id="login-button">
+                <i class="bi bi-check-circle"></i> Đăng Nhập
+            </button>
+        </form>
+
+        <div class="auth-links">
+            <p>Chưa có tài khoản? <a href="./register.html"><i class="bi bi-arrow-right"></i> Đăng ký ngay</a></p>
         </div>
-        <div class="footer-bottom">
-            <p>&copy; 2026 BookStore. Tất cả quyền được bảo lưu.</p>
-        </div>
-    </footer>
+    </div>
+</main>
 
 </body>
 </html>

@@ -51,7 +51,7 @@ loginForm.addEventListener('submit', async (e) => {
 
             // Chuyển hướng theo role (đường dẫn tương đối từ login.html)
             const role = (data.user && (data.user.role || data.user.Role)) ? String(data.user.role || data.user.Role).toLowerCase() : '';
-            const target = role === 'admin' ? './admin-user.html' : './home.html';
+            const target = role === 'admin' ? './admin-dashboard.html' : './home.html';
 
             setTimeout(() => {
                 window.location.href = target;

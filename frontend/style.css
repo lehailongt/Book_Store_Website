@@ -224,27 +224,3 @@ footer {
     color: #d1d5db;
 }
 
-/* RESPONSIVE */
-@media (max-width: 768px) {
-    .navbar {
-        padding: 15px 20px;
-        flex-direction: column;
-        gap: 15px;
-    }
-
-    .nav-menu ul {
-        flex-direction: column;
-        gap: 10px;
-        width: 100%;
-    }
-
-    .nav-menu li {
-        text-align: center;
-        width: 100%;
-        padding: 10px 0;
-    }
-
-    .footer-content {
-        grid-template-columns: 1fr;
-    }
-}

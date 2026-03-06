@@ -32,36 +32,28 @@
   <div class="topbar">
     <div class="title"><strong>User</strong></div>
     <div class="actions">
-      <button id="btn-refresh" class="btn"><i class="bi bi-arrow-clockwise"></i> Tải lại</button>
+      <button id="btn-create-user" >
+        <i class="bi bi-plus"></i> Thêm người dùng
+      </button>
     </div>
   </div>
   <div class="content">
     <div class="table-wrap">
       <div class="table-toolbar">
-        <div class="search"><i class="bi bi-search"></i><input id="keyword" class="input" placeholder="Tên, email..."/></div>
-        <select id="role">
-          <option value="">Tất cả vai trò</option>
-          <option value="admin">Admin</option>
-          <option value="user">User</option>
-        </select>
-        <select id="status">
-          <option value="">Trạng thái</option>
-          <option value="active">Đang hoạt động</option>
-          <option value="locked">Đã khóa</option>
-        </select>
+        <div class="search">
+          <i class="bi bi-search"></i>
+          <input id="keyword" class="input" placeholder="Nhập tên..."/>
+        </div>
         <button id="btn-search" class="btn">Lọc</button>
-        <div style="margin-left:auto"></div>
       </div>
       <table class="table" id="user-table">
         <thead>
           <tr>
-            <th>#</th>
-            <th>Avatar</th>
+            <th>ID</th>
             <th>Tên</th>
             <th>Email</th>
-            <th>Vai trò</th>
-            <th>Trạng thái</th>
-            <th>Ngày tạo</th>
+            <th>Số điện thoại</th>
+            <th>Ngày sinh</th>
             <th>Thao tác</th>
           </tr>
         </thead>

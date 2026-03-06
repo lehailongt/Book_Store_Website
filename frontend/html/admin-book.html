@@ -38,29 +38,76 @@
   <div class="content">
     <div class="table-wrap">
       <div class="table-toolbar">
-        <select id="category-filter"><option value="">Tất cả danh mục</option></select>
-        <div class="search"><i class="bi bi-search"></i><input id="keyword" class="input" placeholder="Tìm kiếm sách"/></div>
-        <button id="btn-search" class="btn">Lọc</button>
-        <div style="margin-left:auto"></div>
-        <button id="btn-refresh" class="btn">Tải lại</button>
+        <div class="filter-group">
+          <select id="category-filter" class="filter-select">
+            <option value="">Tất cả danh mục</option>
+            <option value="van-hoc">Văn học</option>
+            <option value="kinh-te">Kinh tế</option>
+            <option value="ky-nang">Kỹ năng sống</option>
+            <option value="thieu-nhi">Thiếu nhi</option>
+            <option value="giao-khoa">Giáo khoa</option>
+          </select>
+          
+          <select id="price-filter" class="filter-select">
+            <option value="">Tất cả giá</option>
+            <option value="0-100000">Dưới 100,000đ</option>
+            <option value="100000-200000">100,000đ - 200,000đ</option>
+            <option value="200000-300000">200,000đ - 300,000đ</option>
+            <option value="300000-500000">300,000đ - 500,000đ</option>
+            <option value="500000-9999999">Trên 500,000đ</option>
+          </select>
+          
+          <div class="price-range" id="price-range" style="display: none;">
+            <input type="number" id="min-price" class="input price-input" placeholder="Giá từ" min="0" />
+            <span>-</span>
+            <input type="number" id="max-price" class="input price-input" placeholder="Đến" min="0" />
+          </div>
+        </div>
+        
+        <div class="search">
+          <i class="bi bi-search"></i>
+          <input id="keyword" class="input" placeholder="Tìm kiếm sách theo tên hoặc tác giả"/>
+        </div>
+        
+        <button id="btn-search" class="btn btn-primary">
+          <i class="bi bi-filter"></i> Lọc
+        </button>
+        
+        <button id="btn-reset" class="btn btn-secondary">
+          <i class="bi bi-x-circle"></i> Xóa lọc
+        </button>
+        
+        <button id="btn-refresh" class="btn btn-info">
+          <i class="bi bi-arrow-clockwise"></i> Tải lại
+        </button>
       </div>
+      
+      <div class="active-filters" id="active-filters">
+        <!-- Các filter đang active sẽ hiển thị ở đây -->
+      </div>
+      
       <table class="table" id="book-table">
         <thead>
           <tr>
-            <th>#</th>
-            <th>Ảnh</th>
+            <th>Mã sách</th>
             <th>Tên sách</th>
-            <th>Danh mục</th>
+            <th>Tên tác giả</th>
+            <th>Loại sách</th>
             <th>Giá</th>
-            <th>Tồn kho</th>
-            <th>Ngày tạo</th>
-            <th></th>
+            <th>Ngày xuất bản</th>
           </tr>
         </thead>
         <tbody></tbody>
       </table>
     </div>
-    <div id="pagination" style="margin-top:10px"></div>
+    
+    <div class="pagination-container" id="pagination">
+      <!-- Pagination sẽ được tạo bằng JavaScript -->
+    </div>
+    
+    <div class="table-info" id="table-info">
+      <!-- Hiển thị thông tin số lượng kết quả -->
+    </div>
   </div>
 </main>
 
