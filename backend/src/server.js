@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import bookRouter from './routes/bookRouter.js';
 import userRouter from './routes/userRouter.js';
+import adminRouter from './routes/adminRouter.js';
 import UserModel from './models/userModel.js';
 
 dotenv.config();
@@ -19,6 +20,7 @@ app.use(cors({
 app.use(express.json());
 
 app.use('/api/books', bookRouter);
+app.use('/api/admin', adminRouter);
 app.use('/api', userRouter);
 
 app.use('/', (req, res) => {

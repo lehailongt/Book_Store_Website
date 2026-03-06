@@ -1,5 +1,6 @@
 // src/controllers/adminController.js
 import pool from '../config/database.js';
+import bcrypt from 'bcrypt';
 
 // Helpers
 function toNumber(v, def = 0) {
@@ -141,6 +142,55 @@ export async function adminGetUserById(req, res) {
   }
 }
 
+export async function adminUpdateUser(req, res) {
+  try {
+    const id = req.params.id;
+    const { fullName, email, phone_number, role } = req.body;
+
+    if (!fullName || !email) {
+      return res.status(400).json({ message: 'Thiếu thông tin bắt buộc (họ tên, email)' });
+    }
+
+    const dbRole = mapUiRoleToDb(role);
+
+    const [result] = await pool.query(
+      'UPDATE users SET full_name = ?, email = ?, phone_number = ?, role = ? WHERE user_id = ?',
+      [fullName, email, phone_number || null, dbRole, id]
+    );
+
+    if (!result.affectedRows) {
+      return res.status(404).json({ message: 'Không tìm thấy user' });
+    }
+
+    res.json({ message: 'Cập nhật tài khoản thành công' });
+  } catch (err) {
+    if (err.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ message: 'Email đã tồn tại ở tài khoản khác' });
+    }
+    console.error(err);
+    res.status(500).json({ message: 'Lỗi cập nhật người dùng' });
+  }
+}
+
+export async function adminDeleteUser(req, res) {
+  try {
+    const id = req.params.id;
+    const [result] = await pool.query('DELETE FROM users WHERE user_id = ?', [id]);
+
+    if (!result.affectedRows) {
+      return res.status(404).json({ message: 'Không tìm thấy user' });
+    }
+
+    res.json({ message: 'Xóa người dùng thành công' });
+  } catch (err) {
+    if (err.code === 'ER_ROW_IS_REFERENCED_2') {
+      return res.status(400).json({ message: 'Không thể xóa vì người dùng này đã có đơn hàng' });
+    }
+    console.error(err);
+    res.status(500).json({ message: 'Lỗi xóa người dùng' });
+  }
+}
+
 export async function adminToggleUserActive(req, res) {
   try {
     // Schema không có cột trạng thái; phản hồi thành công giả lập
@@ -161,6 +211,72 @@ export async function adminUpdateUserRole(req, res) {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Lỗi cập nhật vai trò' });
+  }
+}
+
+export async function adminCreateUser(req, res) {
+  try {
+    const { fullName, email, password, role, phone_number } = req.body;
+    if (!fullName || !email || !password) {
+      return res.status(400).json({ message: 'Thiếu thông tin bắt buộc (họ tên, email, mật khẩu)' });
+    }
+    const dbRole = mapUiRoleToDb(role);
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const [result] = await pool.query(
+      'INSERT INTO users (full_name, email, password, role, phone_number) VALUES (?, ?, ?, ?, ?)',
+      [fullName, email, hashedPassword, dbRole, phone_number || null]
+    );
+    res.status(201).json({ message: 'Thêm người dùng thành công', userId: result.insertId });
+  } catch (err) {
+    if (err.code === 'ER_DUP_ENTRY') {
+      return res.status(400).json({ message: 'Email đã tồn tại' });
+    }
+    console.error(err);
+    res.status(500).json({ message: 'Lỗi thêm người dùng' });
+  }
+}
+
+export async function adminCreateBook(req, res) {
+  try {
+    const { bookName, authorName, price, description, publishDate, imageUrl, categories } = req.body;
+    if (!bookName || !authorName || price == null) {
+      return res.status(400).json({ message: 'Thiếu thông tin sách bắt buộc (tên sách, tác giả, giá)' });
+    }
+
+    const connection = await pool.getConnection();
+    await connection.beginTransaction();
+    try {
+      const [result] = await connection.query(
+        'INSERT INTO books (book_name, author_name, price, description, publish_date, image_url) VALUES (?, ?, ?, ?, ?, ?)',
+        [bookName, authorName, price, description || null, publishDate || null, imageUrl || null]
+      );
+      const newBookId = result.insertId;
+
+      if (Array.isArray(categories) && categories.length > 0) {
+        for (const catName of categories) {
+          const [catRows] = await connection.query('SELECT category_id FROM categories WHERE category_name = ?', [catName]);
+          let catId;
+          if (catRows.length > 0) {
+            catId = catRows[0].category_id;
+          } else {
+            const [ins] = await connection.query('INSERT INTO categories (category_name) VALUES (?)', [catName]);
+            catId = ins.insertId;
+          }
+          await connection.query('INSERT INTO bookcategories (book_id, category_id) VALUES (?, ?)', [newBookId, catId]);
+        }
+      }
+
+      await connection.commit();
+      connection.release();
+      res.status(201).json({ message: 'Thêm sách thành công', bookId: newBookId });
+    } catch (err) {
+      await connection.rollback();
+      connection.release();
+      throw err;
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Lỗi thêm sách' });
   }
 }
 

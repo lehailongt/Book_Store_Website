@@ -3,8 +3,12 @@ import express from 'express';
 import {
   adminGetUsers,
   adminGetUserById,
+  adminCreateUser,
+  adminUpdateUser,
+  adminDeleteUser,
   adminToggleUserActive,
   adminUpdateUserRole,
+  adminCreateBook,
   adminGetOrders,
   adminGetOrderById,
   adminUpdateOrderStatus,
@@ -34,8 +38,14 @@ router.use((req, res, next) => {
 // Users
 router.get('/users', adminGetUsers);
 router.get('/users/:id', adminGetUserById);
+router.post('/users', adminCreateUser);
+router.put('/users/:id', adminUpdateUser);
+router.delete('/users/:id', adminDeleteUser);
 router.patch('/users/:id/toggle-active', adminToggleUserActive);
 router.patch('/users/:id/role', adminUpdateUserRole);
+
+// Books
+router.post('/books', adminCreateBook);
 
 // Orders
 router.get('/orders', adminGetOrders);
