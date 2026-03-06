@@ -4,7 +4,7 @@
   //=========================
   // Configuration
   //=========================
-  const ADMIN_API_BASE = '/api/admin';
+  const ADMIN_API_BASE = 'http://localhost:5001/api/admin';
   const PAGE_SIZE_DEFAULT = 10;
 
   // Try to read token and current user from localStorage
@@ -108,8 +108,27 @@
   }
 
   function showToast(message, type = 'info') {
-    // Minimal inline toast for now
-    console[type === 'error' ? 'error' : 'log'](message);
+    const toast = document.createElement('div');
+    toast.textContent = (type === 'error' ? '❌ Lỗi: ' : '✅ Thành công: ') + message;
+    toast.style.position = 'fixed';
+    toast.style.bottom = '20px';
+    toast.style.right = '20px';
+    toast.style.padding = '12px 24px';
+    toast.style.borderRadius = '8px';
+    toast.style.color = '#fff';
+    toast.style.fontWeight = 'bold';
+    toast.style.zIndex = '9999';
+    toast.style.transition = 'all 0.3s';
+    toast.style.background = type === 'error' ? '#ef4444' : '#10b981';
+    toast.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+
+    document.body.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(20px)';
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
   }
 
   //=========================
@@ -143,17 +162,13 @@
     els.tbody = els.table ? els.table.querySelector('tbody') : null;
     els.pagination = document.getElementById('pagination');
 
-    els.modal = document.getElementById('user-detail-modal');
+    els.modal = document.getElementById('editUserModal');
     if (els.modal) {
-      els.modalClose = els.modal.querySelector('[data-close]');
-      els.detailAvatar = document.getElementById('detail-avatar');
-      els.detailId = document.getElementById('detail-id');
-      els.detailName = document.getElementById('detail-name');
-      els.detailEmail = document.getElementById('detail-email');
-      els.detailRole = document.getElementById('detail-role');
-      els.detailStatus = document.getElementById('detail-status');
-      els.detailCreated = document.getElementById('detail-createdAt');
-      els.detailUpdated = document.getElementById('detail-updatedAt');
+      els.detailId = document.getElementById('eu-id');
+      els.detailName = document.getElementById('eu-fullname');
+      els.detailEmail = document.getElementById('eu-email');
+      els.detailPhone = document.getElementById('eu-phone');
+      els.detailRole = document.getElementById('eu-role');
     }
   }
 
@@ -191,34 +206,31 @@
     els.tbody.innerHTML = state.rows
       .map((u, i) => {
         const idx = indexOffset + i + 1;
-        const avatar = escapeHtml(u.avatar || '');
         const name = escapeHtml(u.name || u.fullName || u.username || '');
         const email = escapeHtml(u.email || '');
         const role = escapeHtml(u.role || 'user');
-        const isActive = u.isActive !== false; // default true if missing
-        const createdAt = formatDate(u.createdAt || u.created_at);
 
-        const statusBadge = isActive
-          ? '<span class="badge badge-success">Đang hoạt động</span>'
-          : '<span class="badge badge-danger">Đã khóa</span>';
+        const isCustomer = role === 'user' || role === 'customer';
+        const isAdmin = role === 'admin';
 
-        const avatarHtml = avatar
-          ? `<img src="${avatar}" alt="avatar" class="avatar-sm" onerror="this.src='../images/pages/anonymous.png'" />`
-          : `<img src="../images/pages/anonymous.png" alt="avatar" class="avatar-sm" />`;
+        const roleSelectHtml = `
+          <select class="input role-select" data-id="${escapeHtml(u.id || u._id || '')}" style="padding: 3px 6px; font-size: 13px; border-radius: 4px; border: 1px solid #d1d5db; outline: none; background: #fff; cursor: pointer;">
+            <option value="customer" ${isCustomer ? 'selected' : ''}>Customer</option>
+            <option value="admin" ${isAdmin ? 'selected' : ''}>Admin</option>
+          </select>
+        `;
 
         return `
           <tr data-id="${escapeHtml(u.id || u._id || '')}">
             <td>${idx}</td>
-            <td>${avatarHtml}</td>
+            <td style="font-weight: 500;">#${escapeHtml(u.id || u._id || '')}</td>
             <td>${name}</td>
             <td>${email}</td>
-            <td><span class="badge badge-role">${role}</span></td>
-            <td>${statusBadge}</td>
-            <td>${createdAt}</td>
+            <td>${escapeHtml(u.phone_number || '')}</td>
+            <td>${roleSelectHtml}</td>
             <td>
-              <button class="btn btn-link btn-view" title="Xem chi tiết"><i class="bi bi-eye"></i></button>
-              <button class="btn btn-link btn-toggle" title="Khóa/Mở khóa"><i class="bi bi-shield-lock"></i></button>
-              <button class="btn btn-link btn-role" title="Đổi vai trò"><i class="bi bi-person-gear"></i></button>
+              <button class="btn btn-link btn-edit" title="Chỉnh sửa người dùng"><i class="bi bi-pencil-square"></i></button>
+              <button class="btn btn-link btn-delete" title="Xóa người dùng" style="color: #ef4444;"><i class="bi bi-trash3"></i></button>
             </td>
           </tr>
         `;
@@ -261,27 +273,24 @@
   //=========================
   function openModal() {
     if (!els.modal) return;
-    els.modal.setAttribute('aria-hidden', 'false');
-    els.modal.classList.add('open');
+    els.modal.style.display = 'flex';
   }
 
   function closeModal() {
     if (!els.modal) return;
-    els.modal.setAttribute('aria-hidden', 'true');
-    els.modal.classList.remove('open');
+    els.modal.style.display = 'none';
   }
 
   function fillDetail(user) {
     if (!els.modal) return;
-    const avatar = user.avatar || '';
-    els.detailAvatar.src = avatar || '../images/pages/anonymous.png';
-    els.detailId.textContent = user.id || user._id || '';
-    els.detailName.textContent = user.name || user.fullName || user.username || '';
-    els.detailEmail.textContent = user.email || '';
-    els.detailRole.textContent = user.role || 'user';
-    els.detailStatus.textContent = user.isActive !== false ? 'Đang hoạt động' : 'Đã khóa';
-    els.detailCreated.textContent = formatDate(user.createdAt || user.created_at);
-    els.detailUpdated.textContent = formatDate(user.updatedAt || user.updated_at);
+    els.detailId.value = user.id || user._id || '';
+    els.detailName.value = user.name || user.full_name || user.fullName || '';
+    els.detailEmail.value = user.email || '';
+    els.detailPhone.value = user.phone_number || '';
+
+    // map DB to UI options 
+    const isCustomer = user.role === 'customer' || user.role === 'user';
+    els.detailRole.value = isCustomer ? 'customer' : 'admin';
   }
 
   //=========================
@@ -339,41 +348,39 @@
   //=========================
   // Actions
   //=========================
-  async function toggleActive(userId) {
+  async function deleteUser(userId) {
     if (!userId) return;
-    if (!confirm('Bạn có chắc muốn khóa/mở khóa tài khoản này?')) return;
+    if (!confirm('Bạn có chắc muốn XÓA người dùng này?')) return;
 
     try {
-      await fetchAdmin(`/users/${encodeURIComponent(userId)}/toggle-active`, {
-        method: 'PATCH',
+      await fetchAdmin(`/users/${encodeURIComponent(userId)}`, {
+        method: 'DELETE',
       });
-      showToast('Cập nhật trạng thái thành công', 'info');
+      showToast('Xóa người dùng thành công', 'info');
       await loadUsers({ page: state.page });
     } catch (err) {
       console.error(err);
-      showToast(err.message || 'Cập nhật trạng thái thất bại', 'error');
+      showToast(err.message || 'Xóa người dùng thất bại', 'error');
     }
   }
 
-  async function changeRole(userId, currentRole) {
-    if (!userId) return;
-    const next = prompt(
-      `Nhập vai trò mới cho user (admin/user). Hiện tại: ${currentRole || 'user'}`,
-      currentRole || 'user'
-    );
-    if (!next) return;
-    const role = String(next).trim().toLowerCase();
-    if (!['admin', 'user'].includes(role)) {
-      alert('Vai trò không hợp lệ. Chỉ chấp nhận: admin hoặc user');
-      return;
-    }
+  async function changeRole(userId, newRole) {
+    if (!userId || !newRole) return;
 
     try {
-      await fetchAdmin(`/users/${encodeURIComponent(userId)}/role`, {
+      const res = await fetch(`${ADMIN_API_BASE}/users/${encodeURIComponent(userId)}/role`, {
         method: 'PATCH',
-        body: JSON.stringify({ role }),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${getToken()}`
+        },
+        body: JSON.stringify({ role: newRole }),
       });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error((data && data.message) || 'Lỗi cập nhật vai trò');
+
       showToast('Cập nhật vai trò thành công', 'info');
+      // No need to reload all users fully, just keep UX smooth - we can reload to sync completely
       await loadUsers({ page: state.page });
     } catch (err) {
       console.error(err);
@@ -458,22 +465,25 @@
     }
 
     if (els.table) {
+      els.table.addEventListener('change', (e) => {
+        if (e.target.classList.contains('role-select')) {
+          const userId = e.target.getAttribute('data-id');
+          const newRole = e.target.value;
+          changeRole(userId, newRole);
+        }
+      });
+
       els.table.addEventListener('click', (e) => {
-        const btnView = e.target.closest('.btn-view');
-        const btnToggle = e.target.closest('.btn-toggle');
-        const btnRole = e.target.closest('.btn-role');
+        const btnEdit = e.target.closest('.btn-edit');
+        const btnDelete = e.target.closest('.btn-delete');
         const tr = e.target.closest('tr[data-id]');
         if (!tr) return;
         const userId = tr.getAttribute('data-id');
 
-        if (btnView) {
+        if (btnEdit) {
           viewDetail(userId);
-        } else if (btnToggle) {
-          toggleActive(userId);
-        } else if (btnRole) {
-          const currentRoleEl = tr.querySelector('.badge-role');
-          const currentRole = currentRoleEl ? currentRoleEl.textContent.trim() : 'user';
-          changeRole(userId, currentRole);
+        } else if (btnDelete) {
+          deleteUser(userId);
         }
       });
     }
@@ -482,6 +492,63 @@
       els.modal.addEventListener('click', (e) => {
         if (e.target.matches('[data-close]') || e.target === els.modal) {
           closeModal();
+        }
+      });
+    }
+
+    const btnCreateUser = document.getElementById('btn-create-user');
+    const createUserModal = document.getElementById('createUserModal');
+    const createUserForm = document.getElementById('create-user-form');
+
+    if (btnCreateUser && createUserModal) {
+      btnCreateUser.addEventListener('click', () => {
+        createUserModal.style.display = 'flex';
+      });
+    }
+
+    if (createUserForm) {
+      createUserForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const body = {
+          fullName: document.getElementById('cu-fullname').value,
+          email: document.getElementById('cu-email').value,
+          phone_number: document.getElementById('cu-phone').value,
+          password: document.getElementById('cu-password').value,
+          role: document.getElementById('cu-role').value
+        };
+        try {
+          await fetchAdmin('/users', { method: 'POST', body: JSON.stringify(body) });
+          showToast('Thêm người dùng thành công', 'info');
+          createUserModal.style.display = 'none';
+          createUserForm.reset();
+          loadUsers({ page: 1 });
+        } catch (err) {
+          alert(err.message || 'Lỗi thêm người dùng');
+        }
+      });
+    }
+
+    const editUserForm = document.getElementById('edit-user-form');
+    if (editUserForm) {
+      editUserForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const userId = document.getElementById('eu-id').value;
+        const body = {
+          fullName: document.getElementById('eu-fullname').value,
+          email: document.getElementById('eu-email').value,
+          phone_number: document.getElementById('eu-phone').value,
+          role: document.getElementById('eu-role').value
+        };
+        try {
+          await fetchAdmin(`/users/${encodeURIComponent(userId)}`, {
+            method: 'PUT',
+            body: JSON.stringify(body)
+          });
+          showToast('Cập nhật người dùng thành công', 'info');
+          closeModal();
+          loadUsers({ page: state.page });
+        } catch (err) {
+          alert(err.message || 'Lỗi cập nhật người dùng');
         }
       });
     }

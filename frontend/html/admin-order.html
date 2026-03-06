@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,62 +11,117 @@
   <link rel="stylesheet" href="../css/admin-order.css" />
   <script defer src="../javascript/admin-order.js"></script>
 </head>
+
 <body>
-<div class="admin-shell">
+  <div class="admin-shell">
 
-<aside class="sidebar">
-  <div class="brand">
-    <span class="logo">LT</span> 
-    <span>Admin</span>
-  </div>
-  <div class="section">Menu</div>
-  <nav class="nav">
-    <a href="./admin-dashboard.html" class="active"><i class="bi bi-grid icon"></i>Dashboard</a>
-    <a href="./admin-order.html"><i class="bi bi-receipt icon"></i>Order</a>
-    <a href="./admin-user.html"><i class="bi bi-people icon"></i>User</a>
-    <a href="./admin-book.html"><i class="bi bi-book icon"></i>Book</a>
-    <a href="./login.html"><i class="bi bi-box-arrow-right"></i>Logout</a>
-  </nav>
-</aside>
-
-<main class="main">
-  <div class="topbar">
-    <div class="title"><strong>Order</strong></div>
-  </div>
-  <div class="content">
-    <div class="table-wrap">
-      <div class="table-toolbar">
-        <div class="search">
-          <i class="bi bi-search"></i>
-          <input id="keyword" class="input" placeholder="Nhập mã đơn hàng"/>
-        </div>
-        <select id="status">
-          <option value="">Trạng thái</option>
-          <option value="Đang giao">Đang giao</option>
-          <option value="Đã giao">Đã giao</option>
-          <option value="Hủy bỏ">Hủy bỏ</option>
-        </select>
-        <button id="btn-search" class="btn">Lọc</button>
-        <div style="margin-left:auto"></div>
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="logo">LT</span>
+        <span>Admin</span>
       </div>
-      <table class="table" id="order-table">
-        <thead>
-          <tr>
-            <th>Mã đơn</th>
-            <th>Khách hàng</th>
-            <th>Tổng tiền</th>
-            <th>Trạng thái</th>
-            <th>Ngày tạo</th>
-            <th>Thao tác</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-    <div id="pagination" style="margin-top:10px"></div>
-  </div>
-</main>
+      <div class="section">Menu</div>
+      <nav class="nav">
+        <a href="./admin-dashboard.html"><i class="bi bi-grid icon"></i>Dashboard</a>
+        <a href="./admin-order.html" class="active"><i class="bi bi-receipt icon"></i>Order</a>
+        <a href="./admin-user.html"><i class="bi bi-people icon"></i>User</a>
+        <a href="./admin-book.html"><i class="bi bi-book icon"></i>Book</a>
+        <a href="./login.html"><i class="bi bi-box-arrow-right"></i>Logout</a>
+      </nav>
+    </aside>
 
-</div>
+    <main class="main">
+      <div class="topbar">
+        <div class="title"><strong>Order</strong></div>
+        <div class="profile" style="margin-left: 10px;">
+          <img src="https://i.pravatar.cc/150?img=11" alt="Admin Profile">
+        </div>
+      </div>
+      <div class="content">
+        <div class="table-wrap">
+          <div class="table-toolbar">
+            <div class="search">
+              <i class="bi bi-search"></i>
+              <input id="keyword" class="input" placeholder="Nhập mã đơn hàng" />
+            </div>
+
+            <select id="status" class="filter-select">
+              <option value="">Tất cả trạng thái</option>
+              <option value="Shipped">Đang giao (Shipped)</option>
+              <option value="Completed">Hoàn tất (Completed)</option>
+              <option value="Canceled">Hủy bỏ (Canceled)</option>
+            </select>
+
+            <input type="date" id="from-date" class="input" title="Từ ngày" />
+            <input type="date" id="to-date" class="input" title="Đến ngày" />
+
+            <button id="btn-search" class="btn btn-primary">
+              <i class="bi bi-filter"></i> Lọc
+            </button>
+          </div>
+
+          <table class="table" id="order-table">
+            <thead>
+              <tr>
+                <th>STT</th>
+                <th>Mã đơn</th>
+                <th>Khách hàng</th>
+                <th>Tổng tiền</th>
+                <th>Trạng thái</th>
+                <th>Ngày tạo</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Dữ liệu sẽ được load bằng JavaScript -->
+            </tbody>
+          </table>
+        </div>
+        <div id="pagination" style="margin-top:10px"></div>
+      </div>
+    </main>
+
+    <!-- Order Detail Modal -->
+    <div id="order-detail-modal" class="custom-modal" style="display:none;" aria-hidden="true">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4>Chi tiết đơn hàng <span id="detail-id"></span></h4>
+        </div>
+        <div class="modal-body">
+          <p><strong>Khách hàng:</strong> <span id="detail-customer"></span></p>
+          <p><strong>Ngày tạo:</strong> <span id="detail-createdAt"></span></p>
+          <p><strong>Trạng thái:</strong> <span id="detail-status"></span></p>
+          <p><strong>Địa chỉ giao hàng:</strong> <span id="detail-address"></span></p>
+          <p><strong>Phương thức thanh toán:</strong> <span id="detail-payment"></span></p>
+          <hr style="margin: 10px 0; border: 0; border-top: 1px solid var(--border-color);" />
+          <p><strong>Sản phẩm:</strong></p>
+          <ul id="detail-items" style="list-style: none; padding: 0; margin-bottom: 10px; line-height: 1.6;"></ul>
+          <h5 style="text-align: right; font-size: 16px;">TỔNG: <span id="detail-total"
+              style="color: var(--danger);"></span></h5>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" data-close>Đóng</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirmModal" class="custom-modal" style="display:none;">
+      <div class="modal-content" style="max-width: 400px; text-align: center;">
+        <div class="modal-header">
+          <h4>Xác nhận</h4>
+        </div>
+        <div class="modal-body">
+          <p id="confirmMessage"></p>
+        </div>
+        <div class="modal-actions" style="justify-content: center;">
+          <button type="button" id="btnCancelModal" class="btn btn-secondary">Hủy</button>
+          <button type="button" id="btnConfirmModal" class="btn btn-primary">Đồng ý</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
 </body>
+
 </html>

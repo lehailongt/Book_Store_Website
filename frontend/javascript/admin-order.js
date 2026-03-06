@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const ADMIN_API_BASE = '/api/admin';
+  const ADMIN_API_BASE = 'http://localhost:5001/api/admin';
   const PAGE_SIZE_DEFAULT = 10;
 
   function getToken() {
@@ -20,7 +20,7 @@
       try {
         const obj = JSON.parse(raw);
         if (obj && typeof obj === 'object') return obj;
-      } catch (e) {}
+      } catch (e) { }
     }
     return null;
   }
@@ -51,7 +51,7 @@
     let data = null;
     try {
       data = await res.json();
-    } catch {}
+    } catch { }
 
     if (!res.ok) {
       const message = (data && (data.message || data.error)) || `HTTP ${res.status}`;
@@ -155,11 +155,9 @@
   function statusBadge(status) {
     const s = String(status || '').toLowerCase();
     const map = {
-      pending: 'badge-warning',
-      processing: 'badge-info',
-      shipped: 'badge-primary',
-      completed: 'badge-success',
-      canceled: 'badge-danger',
+      'đang giao': 'badge-warning',
+      'đã giao': 'badge-success',
+      'đã hủy': 'badge-danger',
     };
     const cls = map[s] || 'badge-secondary';
     return `<span class="badge ${cls}">${escapeHtml(status || '')}</span>`;
@@ -185,26 +183,17 @@
 
         let nextActions = '';
         const s = String(status).toLowerCase();
-        if (s === 'pending') {
+        if (s === 'đang giao') {
           nextActions = `
-            <button class="btn btn-link btn-status" data-next="Processing" title="Chuyển Processing"><i class="bi bi-play"></i></button>
+            <button class="btn btn-link btn-status" data-next="Đã giao" title="Xác nhận đã giao"><i class="bi bi-check2-circle"></i></button>
             <button class="btn btn-link btn-cancel" title="Hủy đơn"><i class="bi bi-x-circle"></i></button>
-          `;
-        } else if (s === 'processing') {
-          nextActions = `
-            <button class="btn btn-link btn-status" data-next="Shipped" title="Chuyển Shipped"><i class="bi bi-truck"></i></button>
-            <button class="btn btn-link btn-cancel" title="Hủy đơn"><i class="bi bi-x-circle"></i></button>
-          `;
-        } else if (s === 'shipped') {
-          nextActions = `
-            <button class="btn btn-link btn-status" data-next="Completed" title="Hoàn tất"><i class="bi bi-check2-circle"></i></button>
           `;
         }
 
         return `
           <tr data-id="${escapeHtml(id)}">
             <td>${idx}</td>
-            <td>#${escapeHtml(code)}</td>
+            <td style="font-weight: 500;">#${escapeHtml(code)}</td>
             <td>${escapeHtml(customer)}</td>
             <td>${Number(total).toLocaleString('vi-VN')} đ</td>
             <td>${statusBadge(status)}</td>
@@ -244,14 +233,12 @@
 
   function openModal() {
     if (!els.modal) return;
-    els.modal.setAttribute('aria-hidden', 'false');
-    els.modal.classList.add('open');
+    els.modal.style.display = 'flex';
   }
 
   function closeModal() {
     if (!els.modal) return;
-    els.modal.setAttribute('aria-hidden', 'true');
-    els.modal.classList.remove('open');
+    els.modal.style.display = 'none';
   }
 
   function fillDetail(order) {
@@ -333,38 +320,58 @@
     }
   }
 
-  async function updateStatus(orderId, next) {
-    if (!orderId) return;
-    if (!next) return;
-    if (!confirm(`Xác nhận cập nhật trạng thái đơn sang: ${next}?`)) return;
+  let pendingConfirmAction = null;
 
-    try {
-      await fetchAdmin(`/orders/${encodeURIComponent(orderId)}/status`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status: next }),
-      });
-      showToast('Cập nhật trạng thái thành công', 'info');
-      await loadOrders({ page: state.page });
-    } catch (err) {
-      console.error(err);
-      showToast(err.message || 'Cập nhật trạng thái thất bại', 'error');
+  function showConfirmModal(message, actionCallback) {
+    const modal = document.getElementById('confirmModal');
+    const msgEl = document.getElementById('confirmMessage');
+    if (!modal || !msgEl) {
+      if (confirm(message)) actionCallback();
+      return;
     }
+    msgEl.textContent = message;
+    pendingConfirmAction = actionCallback;
+    modal.style.display = 'flex';
   }
 
-  async function cancelOrder(orderId) {
+  function closeConfirmModal() {
+    const modal = document.getElementById('confirmModal');
+    if (modal) modal.style.display = 'none';
+    pendingConfirmAction = null;
+  }
+
+  function updateStatus(orderId, next) {
+    if (!orderId || !next) return;
+    showConfirmModal(`Xác nhận cập nhật trạng thái đơn sang: ${next}?`, async () => {
+      try {
+        await fetchAdmin(`/orders/${encodeURIComponent(orderId)}/status`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status: next }),
+        });
+        showToast('Cập nhật trạng thái thành công', 'info');
+        await loadOrders({ page: state.page });
+      } catch (err) {
+        console.error(err);
+        showToast(err.message || 'Cập nhật trạng thái thất bại', 'error');
+      }
+    });
+  }
+
+  function cancelOrder(orderId) {
     if (!orderId) return;
-    if (!confirm('Xác nhận hủy đơn hàng này?')) return;
-    try {
-      await fetchAdmin(`/orders/${encodeURIComponent(orderId)}/status`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status: 'Canceled' }),
-      });
-      showToast('Đã hủy đơn hàng', 'info');
-      await loadOrders({ page: state.page });
-    } catch (err) {
-      console.error(err);
-      showToast(err.message || 'Hủy đơn thất bại', 'error');
-    }
+    showConfirmModal('Xác nhận hủy đơn hàng này?', async () => {
+      try {
+        await fetchAdmin(`/orders/${encodeURIComponent(orderId)}/status`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status: 'Đã hủy' }),
+        });
+        showToast('Đã hủy đơn hàng', 'info');
+        await loadOrders({ page: state.page });
+      } catch (err) {
+        console.error(err);
+        showToast(err.message || 'Hủy đơn thất bại', 'error');
+      }
+    });
   }
 
   async function viewDetail(orderId) {
@@ -472,6 +479,15 @@
         }
       });
     }
+
+    const btnCancelModal = document.getElementById('btnCancelModal');
+    if (btnCancelModal) btnCancelModal.addEventListener('click', closeConfirmModal);
+
+    const btnConfirmModal = document.getElementById('btnConfirmModal');
+    if (btnConfirmModal) btnConfirmModal.addEventListener('click', () => {
+      if (pendingConfirmAction) pendingConfirmAction();
+      closeConfirmModal();
+    });
   }
 
   function init() {

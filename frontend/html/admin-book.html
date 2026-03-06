@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,107 +11,175 @@
   <link rel="stylesheet" href="../css/admin-book.css" />
   <script defer src="../javascript/admin-book.js"></script>
 </head>
+
 <body>
-<div class="admin-shell">
+  <div class="admin-shell">
 
-<aside class="sidebar">
-  <div class="brand">
-    <span class="logo">LT</span> 
-    <span>Admin</span>
-  </div>
-  <div class="section">Menu</div>
-  <nav class="nav">
-    <a href="./admin-dashboard.html" class="active"><i class="bi bi-grid icon"></i>Dashboard</a>
-    <a href="./admin-order.html"><i class="bi bi-receipt icon"></i>Order</a>
-    <a href="./admin-user.html"><i class="bi bi-people icon"></i>User</a>
-    <a href="./admin-book.html"><i class="bi bi-book icon"></i>Book</a>
-    <a href="./login.html"><i class="bi bi-box-arrow-right"></i>Logout</a>
-  </nav>
-</aside>
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="logo">LT</span>
+        <span>Admin</span>
+      </div>
+      <div class="section">Menu</div>
+      <nav class="nav">
+        <a href="./admin-dashboard.html"><i class="bi bi-grid icon"></i>Dashboard</a>
+        <a href="./admin-order.html"><i class="bi bi-receipt icon"></i>Order</a>
+        <a href="./admin-user.html"><i class="bi bi-people icon"></i>User</a>
+        <a href="./admin-book.html" class="active"><i class="bi bi-book icon"></i>Book</a>
+        <a href="./login.html"><i class="bi bi-box-arrow-right"></i>Logout</a>
+      </nav>
+    </aside>
 
-<main class="main">
-  <div class="topbar">
-    <div class="title"><strong>Books</strong></div>
-    <div class="actions">
-      <button id="btn-create-book" class="btn btn-primary"><i class="bi bi-plus"></i> Thêm sách</button>
-    </div>
-  </div>
-  <div class="content">
-    <div class="table-wrap">
-      <div class="table-toolbar">
-        <div class="filter-group">
-          <select id="category-filter" class="filter-select">
-            <option value="">Tất cả danh mục</option>
-            <option value="van-hoc">Văn học</option>
-            <option value="kinh-te">Kinh tế</option>
-            <option value="ky-nang">Kỹ năng sống</option>
-            <option value="thieu-nhi">Thiếu nhi</option>
-            <option value="giao-khoa">Giáo khoa</option>
-          </select>
-          
-          <select id="price-filter" class="filter-select">
-            <option value="">Tất cả giá</option>
-            <option value="0-100000">Dưới 100,000đ</option>
-            <option value="100000-200000">100,000đ - 200,000đ</option>
-            <option value="200000-300000">200,000đ - 300,000đ</option>
-            <option value="300000-500000">300,000đ - 500,000đ</option>
-            <option value="500000-9999999">Trên 500,000đ</option>
-          </select>
-          
-          <div class="price-range" id="price-range" style="display: none;">
-            <input type="number" id="min-price" class="input price-input" placeholder="Giá từ" min="0" />
-            <span>-</span>
-            <input type="number" id="max-price" class="input price-input" placeholder="Đến" min="0" />
+    <main class="main">
+      <div class="topbar">
+        <div class="title"><strong>Books</strong></div>
+        <div class="actions">
+          <button id="btn-create-book" class="btn btn-primary">
+            <i class="bi bi-plus"></i> Thêm sách
+          </button>
+          <div class="profile" style="margin-left: 10px;">
+            <img src="https://i.pravatar.cc/150?img=11" alt="Admin Profile">
           </div>
         </div>
-        
-        <div class="search">
-          <i class="bi bi-search"></i>
-          <input id="keyword" class="input" placeholder="Tìm kiếm sách theo tên hoặc tác giả"/>
-        </div>
-        
-        <button id="btn-search" class="btn btn-primary">
-          <i class="bi bi-filter"></i> Lọc
-        </button>
-        
-        <button id="btn-reset" class="btn btn-secondary">
-          <i class="bi bi-x-circle"></i> Xóa lọc
-        </button>
-        
-        <button id="btn-refresh" class="btn btn-info">
-          <i class="bi bi-arrow-clockwise"></i> Tải lại
-        </button>
       </div>
-      
-      <div class="active-filters" id="active-filters">
-        <!-- Các filter đang active sẽ hiển thị ở đây -->
-      </div>
-      
-      <table class="table" id="book-table">
-        <thead>
-          <tr>
-            <th>Mã sách</th>
-            <th>Tên sách</th>
-            <th>Tên tác giả</th>
-            <th>Loại sách</th>
-            <th>Giá</th>
-            <th>Ngày xuất bản</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-    
-    <div class="pagination-container" id="pagination">
-      <!-- Pagination sẽ được tạo bằng JavaScript -->
-    </div>
-    
-    <div class="table-info" id="table-info">
-      <!-- Hiển thị thông tin số lượng kết quả -->
-    </div>
-  </div>
-</main>
+      <div class="content">
+        <div class="table-wrap">
+          <div class="table-toolbar">
+            <div class="filter-group">
+              <select id="category-filter" class="filter-select">
+                <option value="">Tất cả danh mục</option>
+                <option value="van-hoc">Văn học</option>
+                <option value="kinh-te">Kinh tế</option>
+                <option value="ky-nang">Kỹ năng sống</option>
+                <option value="thieu-nhi">Thiếu nhi</option>
+                <option value="giao-khoa">Giáo khoa</option>
+              </select>
 
-</div>
+              <select id="price-filter" class="filter-select">
+                <option value="">Tất cả giá</option>
+                <option value="0-100000">Dưới 100,000đ</option>
+                <option value="100000-200000">100,000đ - 200,000đ</option>
+                <option value="200000-300000">200,000đ - 300,000đ</option>
+                <option value="300000-500000">300,000đ - 500,000đ</option>
+                <option value="500000-9999999">Trên 500,000đ</option>
+              </select>
+            </div>
+
+            <div class="search">
+              <i class="bi bi-search"></i>
+              <input id="keyword" class="input" placeholder="Tìm kiếm sách theo tên hoặc tác giả" />
+            </div>
+
+            <button id="btn-search" class="btn btn-primary">
+              <i class="bi bi-filter"></i> Lọc
+            </button>
+          </div>
+
+          <table class="table" id="book-table">
+            <thead>
+              <tr>
+                <th>STT</th>
+                <th>Mã sách</th>
+                <th>Ảnh</th>
+                <th>Tên sách</th>
+                <th>Tên tác giả</th>
+                <th>Loại sách</th>
+                <th>Giá</th>
+                <th>Ngày xuất bản</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Dữ liệu sẽ được load bằng JavaScript -->
+            </tbody>
+          </table>
+        </div>
+        <div id="pagination" style="margin-top:10px"></div>
+      </div>
+    </main>
+
+    <!-- Create Book Modal -->
+    <div id="createBookModal" class="custom-modal" style="display:none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4>Thêm Sách</h4>
+        </div>
+        <div class="modal-body">
+          <form id="create-book-form">
+            <div style="margin-bottom: 15px;">
+              <input type="text" id="cb-name" class="input" placeholder="Tên sách" style="width: 100%;" required />
+            </div>
+            <div style="margin-bottom: 15px;">
+              <input type="text" id="cb-author" class="input" placeholder="Tên tác giả" style="width: 100%;" required />
+            </div>
+            <div style="margin-bottom: 15px;">
+              <input type="number" id="cb-price" class="input" placeholder="Giá" style="width: 100%;" required
+                min="1" />
+            </div>
+            <div style="margin-bottom: 15px;">
+              <textarea id="cb-description" class="input" placeholder="Mô tả"
+                style="width: 100%; height: 80px;"></textarea>
+            </div>
+            <div style="margin-bottom: 15px;">
+              <input type="text" id="cb-image" class="input" placeholder="Link ảnh (VD: http://...)"
+                style="width: 100%;" />
+            </div>
+            <div style="margin-bottom: 15px;">
+              <input type="text" id="cb-categories" class="input"
+                placeholder="Danh mục (phân cách bằng dấu phẩy, VD: văn học, kinh tế)" style="width: 100%;" />
+            </div>
+            <div class="modal-actions">
+              <button type="button" class="btn btn-secondary"
+                onclick="document.getElementById('createBookModal').style.display='none'">Hủy</button>
+              <button type="submit" class="btn btn-primary">Lưu</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Book Modal -->
+    <div id="editBookModal" class="custom-modal" style="display:none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4>Sửa Sách</h4>
+        </div>
+        <div class="modal-body">
+          <form id="edit-book-form">
+            <input type="hidden" id="eb-id" />
+            <div style="margin-bottom: 15px;">
+              <input type="text" id="eb-name" class="input" placeholder="Tên sách" style="width: 100%;" required />
+            </div>
+            <div style="margin-bottom: 15px;">
+              <input type="text" id="eb-author" class="input" placeholder="Tên tác giả" style="width: 100%;" required />
+            </div>
+            <div style="margin-bottom: 15px;">
+              <input type="number" id="eb-price" class="input" placeholder="Giá" style="width: 100%;" required
+                min="1" />
+            </div>
+            <div style="margin-bottom: 15px;">
+              <textarea id="eb-description" class="input" placeholder="Mô tả"
+                style="width: 100%; height: 80px;"></textarea>
+            </div>
+            <div style="margin-bottom: 15px;">
+              <input type="text" id="eb-image" class="input" placeholder="Link ảnh (VD: http://...)"
+                style="width: 100%;" />
+            </div>
+            <div style="margin-bottom: 15px;">
+              <input type="text" id="eb-categories" class="input"
+                placeholder="Danh mục (phân cách bằng dấu phẩy, VD: văn học, kinh tế)" style="width: 100%;" />
+            </div>
+            <div class="modal-actions">
+              <button type="button" class="btn btn-secondary"
+                onclick="document.getElementById('editBookModal').style.display='none'">Hủy</button>
+              <button type="submit" class="btn btn-primary">Cập nhật</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+  </div>
 </body>
+
 </html>

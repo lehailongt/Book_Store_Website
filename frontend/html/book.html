@@ -1,4 +1,5 @@
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -6,23 +7,19 @@
     <link rel="stylesheet" href="../style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="../css/book.css">
+    <script defer src="../javascript/header.js"></script>
     <script defer src="../javascript/book.js"></script>
 </head>
+
 <body>
 
     <header>
         <nav class="navbar">
             <div class="nav-logo">
-                <h2><i class="bi bi-book"></i> BookStore</h2>    
+                <h2><i class="bi bi-book"></i> BookStore</h2>
             </div>
             <div class="nav-menu">
-                <ul>
-                    <li><a href="./home.html"><i class="bi bi-house"></i> Trang Chủ</a></li>
-                    <li><a href="./book.html"><i class="bi bi-book"></i> Sách</a></li>
-                    <li><a href="./sell-book.html"><i class="bi bi-plus-lg"></i> Bán Sách</a></li>
-                    <li><a href="./cart.html"><i class="bi bi-cart"></i> Giỏ Hàng</a></li>
-                    <li><a href="./login.html"><i class="bi bi-person"></i> Đăng Nhập</a></li>
-                </ul>
+                <!-- Injected via header.js -->
             </div>
         </nav>
     </header>
@@ -68,7 +65,8 @@
                     <div class="price-range">
                         <input type="number" id="minPrice" class="price-input" placeholder="Từ" min="0" value="0">
                         <span>-</span>
-                        <input type="number" id="maxPrice" class="price-input" placeholder="Đến" min="0" value="1000000">
+                        <input type="number" id="maxPrice" class="price-input" placeholder="Đến" min="0"
+                            value="1000000">
                     </div>
                 </div>
 
@@ -164,4 +162,5 @@
     </main>
 
 </body>
+
 </html>

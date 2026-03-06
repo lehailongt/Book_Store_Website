@@ -9,6 +9,8 @@ import {
   adminToggleUserActive,
   adminUpdateUserRole,
   adminCreateBook,
+  adminUpdateBook,
+  adminDeleteBook,
   adminGetOrders,
   adminGetOrderById,
   adminUpdateOrderStatus,
@@ -46,6 +48,8 @@ router.patch('/users/:id/role', adminUpdateUserRole);
 
 // Books
 router.post('/books', adminCreateBook);
+router.put('/books/:id', adminUpdateBook);
+router.delete('/books/:id', adminDeleteBook);
 
 // Orders
 router.get('/orders', adminGetOrders);

@@ -23,36 +23,34 @@ function mapUiRoleToDb(role) {
 function mapDbOrderStatusToUi(status) {
   const s = String(status || '').toLowerCase();
   switch (s) {
-    case 'pending':
-      return 'Pending';
-    case 'shipped':
-      return 'Shipped';
     case 'delivered':
-      return 'Completed';
+      return 'Đã giao';
     case 'cancelled':
-      return 'Canceled';
+      return 'Đã hủy';
+    case 'pending':
+    case 'shipped':
     default:
-      return 'Pending';
+      return 'Đang giao';
   }
 }
 
-function mapUiOrderStatusToDb(status) {
+function mapUiOrderStatusToDb(status, action = 'filter') {
   const s = String(status || '').toLowerCase();
   switch (s) {
-    case 'pending':
-      return 'pending';
-    case 'processing':
-      // Không có trong DB; t��m map về 'pending'
-      return 'pending';
-    case 'shipped':
-      return 'shipped';
+    case 'đã giao':
     case 'completed':
-      return 'delivered';
+    case 'delivered':
+      return action === 'filter' ? ['delivered'] : 'delivered';
+    case 'hủy':
+    case 'đã hủy':
     case 'canceled':
     case 'cancelled':
-      return 'cancelled';
+      return action === 'filter' ? ['cancelled'] : 'cancelled';
+    case 'đang giao':
+    case 'pending':
+    case 'shipped':
     default:
-      return 'pending';
+      return action === 'filter' ? ['pending', 'shipped'] : 'pending';
   }
 }
 
@@ -280,6 +278,73 @@ export async function adminCreateBook(req, res) {
   }
 }
 
+export async function adminUpdateBook(req, res) {
+  try {
+    const id = req.params.id;
+    const { bookName, authorName, price, description, publishDate, imageUrl, categories } = req.body;
+    if (!bookName || !authorName || price == null) {
+      return res.status(400).json({ message: 'Thiếu thông tin sách bắt buộc (tên sách, tác giả, giá)' });
+    }
+
+    const connection = await pool.getConnection();
+    await connection.beginTransaction();
+    try {
+      const [r] = await connection.query(
+        'UPDATE books SET book_name = ?, author_name = ?, price = ?, description = ?, publish_date = ?, image_url = ? WHERE book_id = ?',
+        [bookName, authorName, price, description || null, publishDate || null, imageUrl || null, id]
+      );
+
+      if (!r.affectedRows) {
+        await connection.rollback();
+        connection.release();
+        return res.status(404).json({ message: 'Không tìm thấy sách' });
+      }
+
+      await connection.query('DELETE FROM bookcategories WHERE book_id = ?', [id]);
+
+      if (Array.isArray(categories) && categories.length > 0) {
+        for (const catName of categories) {
+          const [catRows] = await connection.query('SELECT category_id FROM categories WHERE category_name = ?', [catName]);
+          let catId;
+          if (catRows.length > 0) {
+            catId = catRows[0].category_id;
+          } else {
+            const [ins] = await connection.query('INSERT INTO categories (category_name) VALUES (?)', [catName]);
+            catId = ins.insertId;
+          }
+          await connection.query('INSERT INTO bookcategories (book_id, category_id) VALUES (?, ?)', [id, catId]);
+        }
+      }
+
+      await connection.commit();
+      connection.release();
+      res.json({ message: 'Cập nhật sách thành công' });
+    } catch (err) {
+      await connection.rollback();
+      connection.release();
+      throw err;
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Lỗi cập nhật sách' });
+  }
+}
+
+export async function adminDeleteBook(req, res) {
+  try {
+    const id = req.params.id;
+    const [r] = await pool.query('DELETE FROM books WHERE book_id = ?', [id]);
+    if (!r.affectedRows) return res.status(404).json({ message: 'Không tìm thấy sách' });
+    res.json({ message: 'Xóa sách thành công' });
+  } catch (err) {
+    if (err.code === 'ER_ROW_IS_REFERENCED_2') {
+      return res.status(400).json({ message: 'Không thể xóa vì sách đã có trong đơn hàng hoặc giỏ hàng' });
+    }
+    console.error(err);
+    res.status(500).json({ message: 'Lỗi xóa sách' });
+  }
+}
+
 // Orders
 export async function adminGetOrders(req, res) {
   try {
@@ -299,8 +364,9 @@ export async function adminGetOrders(req, res) {
       params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`);
     }
     if (status) {
-      where.push('o.status = ?');
-      params.push(mapUiOrderStatusToDb(status));
+      const dbStatuses = mapUiOrderStatusToDb(status, 'filter');
+      where.push(`o.status IN (${dbStatuses.map(() => '?').join(',')})`);
+      params.push(...dbStatuses);
     }
     if (from) {
       where.push('o.created_at >= ?');
@@ -393,7 +459,7 @@ export async function adminGetOrderById(req, res) {
 export async function adminUpdateOrderStatus(req, res) {
   try {
     const id = req.params.id;
-    const dbStatus = mapUiOrderStatusToDb(req.body.status);
+    const dbStatus = mapUiOrderStatusToDb(req.body.status, 'update');
     const [r] = await pool.query('UPDATE orders SET status = ? WHERE order_id = ?', [dbStatus, id]);
     if (!r.affectedRows) return res.status(404).json({ message: 'Không tìm thấy đơn hàng' });
     res.json({ message: 'Cập nhật trạng thái đơn hàng thành công' });

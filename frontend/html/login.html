@@ -1,4 +1,5 @@
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -6,38 +7,43 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="../style.css">
     <link rel="stylesheet" href="../css/login.css">
+    <script defer src="../javascript/header.js"></script>
     <script defer src="../javascript/login.js"></script>
 </head>
+
 <body>
 
-<main>
-    <div class="login-container">
-        <div class="form-header">
-            <h1><i class="bi bi-box-arrow-in-right"></i> Đăng Nhập</h1>
-            <p>Đăng nhập để truy cập tài khoản của bạn</p>
-        </div>
-
-        <form id="loginForm" action="" method="post">
-            <div class="form-group">
-                <label for="email" class="form-label"><i class="bi bi-envelope"></i> Email</label>
-                <input type="text" class="form-control" id="email" name="email" placeholder="your.email@gmail.com" required>
+    <main>
+        <div class="login-container">
+            <div class="form-header">
+                <h1><i class="bi bi-box-arrow-in-right"></i> Đăng Nhập</h1>
+                <p>Đăng nhập để truy cập tài khoản của bạn</p>
             </div>
 
-            <div class="form-group">
-                <label for="password" class="form-label"><i class="bi bi-lock"></i> Mật Khẩu</label>
-                <input type="password" class="form-control" id="password" name="password" placeholder="Nhập mật khẩu" required>
+            <form id="loginForm" action="" method="post">
+                <div class="form-group">
+                    <label for="email" class="form-label"><i class="bi bi-envelope"></i> Email</label>
+                    <input type="text" class="form-control" id="email" name="email" placeholder="your.email@gmail.com"
+                        required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label"><i class="bi bi-lock"></i> Mật Khẩu</label>
+                    <input type="password" class="form-control" id="password" name="password"
+                        placeholder="Nhập mật khẩu" required>
+                </div>
+
+                <button type="submit" class="btn btn-login" id="login-button">
+                    <i class="bi bi-check-circle"></i> Đăng Nhập
+                </button>
+            </form>
+
+            <div class="auth-links">
+                <p>Chưa có tài khoản? <a href="./register.html"><i class="bi bi-arrow-right"></i> Đăng ký ngay</a></p>
             </div>
-
-            <button type="submit" class="btn btn-login" id="login-button">
-                <i class="bi bi-check-circle"></i> Đăng Nhập
-            </button>
-        </form>
-
-        <div class="auth-links">
-            <p>Chưa có tài khoản? <a href="./register.html"><i class="bi bi-arrow-right"></i> Đăng ký ngay</a></p>
         </div>
-    </div>
-</main>
+    </main>
 
 </body>
+
 </html>

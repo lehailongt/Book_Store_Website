@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,60 +11,141 @@
   <link rel="stylesheet" href="../css/admin-book.css" />
   <script defer src="../javascript/admin-user.js"></script>
 </head>
+
 <body>
-<div class="admin-shell">
+  <div class="admin-shell">
 
-<aside class="sidebar">
-  <div class="brand">
-    <span class="logo">LT</span> 
-    <span>Admin</span>
-  </div>
-  <div class="section">Menu</div>
-  <nav class="nav">
-    <a href="./admin-dashboard.html" class="active"><i class="bi bi-grid icon"></i>Dashboard</a>
-    <a href="./admin-order.html"><i class="bi bi-receipt icon"></i>Order</a>
-    <a href="./admin-user.html"><i class="bi bi-people icon"></i>User</a>
-    <a href="./admin-book.html"><i class="bi bi-book icon"></i>Book</a>
-    <a href="./login.html"><i class="bi bi-box-arrow-right"></i>Logout</a>
-  </nav>
-</aside>
-
-<main class="main">
-  <div class="topbar">
-    <div class="title"><strong>User</strong></div>
-    <div class="actions">
-      <button id="btn-create-user" >
-        <i class="bi bi-plus"></i> Thêm người dùng
-      </button>
-    </div>
-  </div>
-  <div class="content">
-    <div class="table-wrap">
-      <div class="table-toolbar">
-        <div class="search">
-          <i class="bi bi-search"></i>
-          <input id="keyword" class="input" placeholder="Nhập tên..."/>
-        </div>
-        <button id="btn-search" class="btn">Lọc</button>
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="logo">LT</span>
+        <span>Admin</span>
       </div>
-      <table class="table" id="user-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Tên</th>
-            <th>Email</th>
-            <th>Số điện thoại</th>
-            <th>Ngày sinh</th>
-            <th>Thao tác</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-    <div id="pagination" style="margin-top:10px"></div>
-  </div>
-</main>
+      <div class="section">Menu</div>
+      <nav class="nav">
+        <a href="./admin-dashboard.html"><i class="bi bi-grid icon"></i>Dashboard</a>
+        <a href="./admin-order.html"><i class="bi bi-receipt icon"></i>Order</a>
+        <a href="./admin-user.html" class="active"><i class="bi bi-people icon"></i>User</a>
+        <a href="./admin-book.html"><i class="bi bi-book icon"></i>Book</a>
+        <a href="./login.html"><i class="bi bi-box-arrow-right"></i>Logout</a>
+      </nav>
+    </aside>
 
-</div>
+    <main class="main">
+      <div class="topbar">
+        <div class="title"><strong>User</strong></div>
+        <div class="actions">
+          <button id="btn-create-user" class="btn btn-primary">
+            <i class="bi bi-plus"></i> Thêm người dùng
+          </button>
+          <div class="profile" style="margin-left: 10px;">
+            <img src="https://i.pravatar.cc/150?img=11" alt="Admin Profile">
+          </div>
+        </div>
+      </div>
+      <div class="content">
+        <div class="table-wrap">
+          <div class="table-toolbar">
+            <div class="search">
+              <i class="bi bi-search"></i>
+              <input id="keyword" class="input" placeholder="Nhập tên..." />
+            </div>
+            <button id="btn-search" class="btn">Lọc</button>
+          </div>
+          <table class="table" id="user-table">
+            <thead>
+              <tr>
+                <th>STT</th>
+                <th>ID</th>
+                <th>Họ tên</th>
+                <th>Email</th>
+                <th>Số điện thoại</th>
+                <th>Vai trò</th>
+                <th>Thao tác</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div id="pagination" style="margin-top:10px"></div>
+      </div>
+    </main>
+
+    <!-- Create User Modal -->
+    <div id="createUserModal" class="custom-modal" style="display:none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4>Thêm Người Dùng</h4>
+        </div>
+        <div class="modal-body">
+          <form id="create-user-form">
+            <div style="margin-bottom: 15px;">
+              <input type="text" id="cu-fullname" class="input" placeholder="Họ và Tên" style="width: 100%;" required />
+            </div>
+            <div style="margin-bottom: 15px;">
+              <input type="email" id="cu-email" class="input" placeholder="Email" style="width: 100%;" required />
+            </div>
+            <div style="margin-bottom: 15px;">
+              <input type="text" id="cu-phone" class="input" placeholder="Số điện thoại" style="width: 100%;" />
+            </div>
+            <div style="margin-bottom: 15px;">
+              <input type="password" id="cu-password" class="input" placeholder="Mật khẩu" style="width: 100%;"
+                required />
+            </div>
+            <div style="margin-bottom: 15px;">
+              <select id="cu-role" class="input" style="width: 100%;">
+                <option value="customer">Customer</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div class="modal-actions">
+              <button type="button" class="btn btn-secondary"
+                onclick="document.getElementById('createUserModal').style.display='none'">Hủy</button>
+              <button type="submit" class="btn btn-primary">Lưu</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit User Modal -->
+    <div id="editUserModal" class="custom-modal" style="display:none;">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h4>Chi tiết Người Dùng</h4>
+        </div>
+        <div class="modal-body">
+          <form id="edit-user-form">
+            <input type="hidden" id="eu-id" />
+            <div style="margin-bottom: 15px;">
+              <label style="font-size:12px; font-weight:bold;">Họ và tên</label>
+              <input type="text" id="eu-fullname" class="input" placeholder="Họ và Tên" style="width: 100%;" required />
+            </div>
+            <div style="margin-bottom: 15px;">
+              <label style="font-size:12px; font-weight:bold;">Email</label>
+              <input type="email" id="eu-email" class="input" placeholder="Email" style="width: 100%;" required />
+            </div>
+            <div style="margin-bottom: 15px;">
+              <label style="font-size:12px; font-weight:bold;">Số điện thoại</label>
+              <input type="text" id="eu-phone" class="input" placeholder="Số điện thoại" style="width: 100%;" />
+            </div>
+            <div style="margin-bottom: 15px;">
+              <label style="font-size:12px; font-weight:bold;">Vai trò</label>
+              <select id="eu-role" class="input" style="width: 100%;">
+                <option value="customer">Customer</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div class="modal-actions">
+              <button type="button" class="btn btn-secondary"
+                onclick="document.getElementById('editUserModal').style.display='none'">Đóng</button>
+              <button type="submit" class="btn btn-primary">Cập nhật</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+  </div>
 </body>
+
 </html>
