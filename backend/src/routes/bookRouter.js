@@ -4,6 +4,7 @@ import {
     getAllCategories,
     getBooksByCategory,
     getBookById,
+    getPopularBooks,
     createBook, 
     updateBook, 
     deleteBook 
@@ -13,6 +14,9 @@ const router = express.Router();
 
 // Lấy tất cả thể loại (đặt trước để không bị confuse với /:id)
 router.get("/categories/all", getAllCategories);
+
+// Lấy sách phổ biến (đặt trước /:id)
+router.get("/popular", getPopularBooks);
 
 // Lấy sách theo thể loại
 router.get("/category/:categoryName", getBooksByCategory);

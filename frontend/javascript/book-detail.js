@@ -12,6 +12,35 @@ function getQueryParams() {
     return params;
 }
 
+// Get token for API calls
+function getToken() {
+    return localStorage.getItem('accessToken') || localStorage.getItem('token') || '';
+}
+
+// Fetch with auth header
+async function fetchAPI(url, options = {}) {
+    const token = getToken();
+    const headers = {
+        'Content-Type': 'application/json',
+        ...options.headers
+    };
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    try {
+        const response = await fetch(url, { ...options, headers });
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data?.message || `Lỗi: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('API Error:', error);
+        throw error;
+    }
+}
+
 // Fetch book details from API
 async function fetchBookDetails(bookId) {
     try {
@@ -52,22 +81,25 @@ function renderBook(book) {
     // Set page title
     document.title = `${book.name} - BookStore`;
 
-    // Book image - Updated path for images/books/{id}.png
+    // Book image - fix relative path
     const bookImage = document.getElementById('bookImage');
-    bookImage.src = book.image_url ? `../${book.image_url}` : '../images/pages/sample-book.png';
+    let imageSrc = book.image_url;
+    if (imageSrc && !imageSrc.startsWith('/') && !imageSrc.startsWith('http')) {
+        imageSrc = '../' + imageSrc;
+    }
+    bookImage.src = imageSrc || '../images/pages/sample-book.png';
     bookImage.alt = book.name;
 
     // Book info
     document.getElementById('bookTitle').textContent = book.name;
     document.getElementById('bookAuthor').textContent = `Tác giả: ${book.author}`;
-    document.getElementById('bookPrice').textContent = formatPrice(book.price);
+    document.getElementById('bookPrice').textContent = formatPrice(book.price) + 'đ';
 
     // Categories
     const categoriesContainer = document.getElementById('bookCategories');
-    if (book.categories) {
-        const categories = book.categories.split(',');
-        categoriesContainer.innerHTML = categories.map(cat =>
-            `<span>${cat.trim()}</span>`
+    if (book.categories && book.categories.length > 0) {
+        categoriesContainer.innerHTML = book.categories.map(cat =>
+            `<span class="category-badge">${cat.name}</span>`
         ).join('');
     } else {
         categoriesContainer.innerHTML = '';
@@ -79,9 +111,14 @@ function renderBook(book) {
     // Details table
     document.getElementById('detailTitle').textContent = book.name;
     document.getElementById('detailAuthor').textContent = book.author;
-    document.getElementById('detailPrice').textContent = formatPrice(book.price);
+    document.getElementById('detailPrice').textContent = formatPrice(book.price) + 'đ';
     document.getElementById('detailPublishDate').textContent = book.publish_date ? new Date(book.publish_date).toLocaleDateString('vi-VN') : 'Chưa cập nhật';
-    document.getElementById('detailCategories').textContent = book.categories || 'Chưa phân loại';
+    
+    // Handle categories array
+    const categoriesText = book.categories && book.categories.length > 0
+        ? book.categories.map(cat => cat.name).join(', ')
+        : 'Chưa phân loại';
+    document.getElementById('detailCategories').textContent = categoriesText;
 
     // Setup quantity controls
     setupQuantityControls();
@@ -121,11 +158,11 @@ function setupQuantityControls() {
     });
 }
 
-// Setup add to cart functionality
-function setupAddToCart(book) {
+// Setup add to cart functionality - using API
+async function setupAddToCart(book) {
     const addToCartBtn = document.getElementById('addToCartBtn');
 
-    addToCartBtn.addEventListener('click', () => {
+    addToCartBtn.addEventListener('click', async () => {
         const currentUser = localStorage.getItem('currentUser');
         if (!currentUser) {
             showNotification('Vui lòng đăng nhập để thêm sách vào giỏ hàng', 'error');
@@ -138,108 +175,199 @@ function setupAddToCart(book) {
         const qtyInput = document.getElementById('qtyInput');
         const quantity = parseInt(qtyInput.value);
 
-        let cart = JSON.parse(localStorage.getItem('cart')) || [];
-        const existing = cart.find(item => item.id === book.id);
-
-        if (existing) {
-            existing.quantity += quantity;
-        } else {
-            cart.push({
-                id: book.id,
-                name: book.name,
-                author: book.author,
-                price: book.price,
-                image_url: book.image_url,
-                quantity: quantity
+        try {
+            const response = await fetchAPI(`${API_BASE}/cart`, {
+                method: 'POST',
+                body: JSON.stringify({ book_id: book.id, quantity: quantity })
             });
+
+            showNotification(`Đã thêm ${quantity} cuốn "${book.name}" vào giỏ hàng!`);
+            
+            // Update cart badge realtime
+            updateCartBadgeFromAPI();
+            
+            // Reset quantity
+            qtyInput.value = 1;
+        } catch (error) {
+            showNotification('Lỗi thêm vào giỏ hàng: ' + error.message, 'error');
         }
-
-        localStorage.setItem('cart', JSON.stringify(cart));
-        showNotification(`Đã thêm ${quantity} cuốn "${book.name}" vào giỏ hàng!`);
-
-        // Update cart count in header if available
-        updateCartCount();
     });
 }
 
-// Render related books
+// Render related books - single row carousel
 async function renderRelatedBooks(currentBook) {
     const container = document.getElementById('relatedBooks');
 
     try {
         const allBooks = await fetchAllBooks();
         
-        // Get current book categories as array
-        const currentCategories = currentBook.categories ? currentBook.categories.split(',').map(c => c.trim()) : [];
+        // Get current book categories
+        const currentCategories = currentBook.categories ? currentBook.categories.map(c => c.name) : [];
         
+        // Filter related books: same category OR same author
         const related = allBooks
             .filter(book => {
                 if (book.id === currentBook.id) return false;
                 
-                // Check if books share at least one category
-                const bookCategories = book.categories ? book.categories.split(',').map(c => c.trim()) : [];
-                const hasCommonCategory = currentCategories.some(cat => bookCategories.includes(cat));
+                // Check if same author
+                if (book.author === currentBook.author) return true;
                 
-                return hasCommonCategory;
+                // Check if books share at least one category
+                if (book.categories && book.categories.length > 0) {
+                    const bookCategories = book.categories.map(c => c.name);
+                    return currentCategories.some(cat => bookCategories.includes(cat));
+                }
+                
+                return false;
             })
-            .slice(0, 4);
+            .slice(0, 12);
 
         if (related.length === 0) {
-            container.innerHTML = '<p>Không có sách liên quan.</p>';
+            container.innerHTML = '<p style="text-align: center; padding: 20px;">Không có sách liên quan.</p>';
             return;
         }
 
-        container.innerHTML = related.map(book => `
-            <div class="book-item" onclick="goToBookDetail(${book.id})">
-                <div class="book-cover">
-                    <img src="${book.image_url ? `../${book.image_url}` : '../images/pages/sample-book.png'}"
-                         alt="${book.name}"
-                         onerror="this.src='../images/pages/sample-book.png'">
+        // Render as carousel row (CSS handles styling)
+        container.classList.add('related-books');
+        
+        container.innerHTML = related.map(book => {
+            const categoryBadges = book.categories && book.categories.length > 0
+                ? book.categories.map(cat => `<span class="category-badge">${cat.name}</span>`).join('')
+                : '<span class="category-badge">Khác</span>';
+            
+            let imageSrc = book.image_url;
+            if (imageSrc && !imageSrc.startsWith('/') && !imageSrc.startsWith('http')) {
+                imageSrc = '../' + imageSrc;
+            }
+
+            return `
+                <div class="related-book-card" data-book-id="${book.id}">
+                    <div class="book-cover-popular">
+                        ${imageSrc ? `<img src="${imageSrc}" alt="${book.name}" class="related-book-img">` : '<i class="bi bi-book"></i>'}
+                    </div>
+                    <div class="book-info">
+                        <h4 class="book-title">${book.name}</h4>
+                        <p class="book-author">${book.author || 'Không rõ'}</p>
+                        <div class="book-categories">
+                            ${categoryBadges}
+                        </div>
+                        <p class="book-price">${formatPrice(book.price)}đ</p>
+                    </div>
                 </div>
-                <div class="book-info">
-                    <h4 class="book-title">${book.name}</h4>
-                    <p class="book-author">${book.author}</p>
-                    <p class="book-price">${formatPrice(book.price)}</p>
-                </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
+
+        // Add click handlers
+        document.querySelectorAll('.related-book-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const bookId = card.dataset.bookId;
+                window.location.href = `./book-detail.html?id=${bookId}`;
+            });
+        });
 
     } catch (error) {
         console.error('Error rendering related books:', error);
-        container.innerHTML = '<p>Không thể tải sách liên quan.</p>';
+        container.innerHTML = '<p style="text-align: center; padding: 20px;">Không thể tải sách liên quan.</p>';
     }
 }
 
-// Navigate to book detail
-function goToBookDetail(bookId) {
-    window.location.href = `./book-detail.html?id=${bookId}`;
+// Render books by the same author
+async function renderBooksByAuthor(currentBook) {
+    const container = document.getElementById('authorBooks');
+    
+    try {
+        const allBooks = await fetchAllBooks();
+        
+        // Filter books by same author only
+        const authorBooks = allBooks
+            .filter(book => {
+                if (book.id === currentBook.id) return false;
+                return book.author === currentBook.author;
+            })
+            .slice(0, 12);
+
+        if (authorBooks.length === 0) {
+            container.innerHTML = '<p style="text-align: center; padding: 20px;">Không có sách khác từ tác giả này.</p>';
+            return;
+        }
+
+        // Render as carousel row (CSS handles styling)
+        container.classList.add('author-books');
+        
+        container.innerHTML = authorBooks.map(book => {
+            const categoryBadges = book.categories && book.categories.length > 0
+                ? book.categories.map(cat => `<span class="category-badge">${cat.name}</span>`).join('')
+                : '<span class="category-badge">Khác</span>';
+            
+            let imageSrc = book.image_url;
+            if (imageSrc && !imageSrc.startsWith('/') && !imageSrc.startsWith('http')) {
+                imageSrc = '../' + imageSrc;
+            }
+
+            return `
+                <div class="author-book-card" data-book-id="${book.id}">
+                    <div class="book-cover-popular">
+                        ${imageSrc ? `<img src="${imageSrc}" alt="${book.name}" class="author-book-img">` : '<i class="bi bi-book"></i>'}
+                    </div>
+                    <div class="book-info">
+                        <h4 class="book-title">${book.name}</h4>
+                        <p class="book-author">${book.author || 'Không rõ'}</p>
+                        <div class="book-categories">
+                            ${categoryBadges}
+                        </div>
+                        <p class="book-price">${formatPrice(book.price)}đ</p>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Add click handlers
+        document.querySelectorAll('.author-book-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const bookId = card.dataset.bookId;
+                window.location.href = `./book-detail.html?id=${bookId}`;
+            });
+        });
+
+    } catch (error) {
+        console.error('Error rendering author books:', error);
+        container.innerHTML = '<p style="text-align: center; padding: 20px;">Không thể tải sách của tác giả.</p>';
+    }
 }
 
 // Format price
 function formatPrice(price) {
-    return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
+    return new Intl.NumberFormat('vi-VN').format(price);
 }
 
-// Show notification
+// Show notification  
 function showNotification(message, type = 'success') {
     const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
+    const bgColor = type === 'error' 
+        ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+        : 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+    
+    notification.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: ${bgColor};
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        font-weight: 500;
+    `;
+    
     notification.textContent = message;
     document.body.appendChild(notification);
 
     setTimeout(() => {
-        notification.remove();
-    }, 3000);
-}
-
-// Update cart count (if header has cart count element)
-function updateCartCount() {
-    const cartCountElement = document.querySelector('.cart-count');
-    if (cartCountElement) {
-        const cart = JSON.parse(localStorage.getItem('cart')) || [];
-        const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-        cartCountElement.textContent = totalItems;
-    }
+        notification.style.transition = 'opacity 0.3s';
+        notification.style.opacity = '0';
+        setTimeout(() => notification.remove(), 300);
+    }, 2500);
 }
 
 // Initialize page
@@ -281,9 +409,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <button class="btn btn-primary" id="addToCartBtn">
                             <i class="bi bi-cart-plus"></i> Thêm vào giỏ hàng
                         </button>
-                        <button class="btn btn-outline-secondary" id="wishBtn">
-                            <i class="bi bi-heart"></i>
-                        </button>
                     </div>
                     <div class="description">
                         <h3>Mô tả</h3>
@@ -324,10 +449,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <p>Đang tải...</p>
                 </div>
             </div>
+
+            <div class="author-books-section">
+                <h3>Sách Cùng Tác Giả</h3>
+                <div class="author-books" id="authorBooks">
+                    <p>Đang tải...</p>
+                </div>
+            </div>
         `;
 
         renderBook(book);
         renderRelatedBooks(book);
+        renderBooksByAuthor(book);
     } else {
         document.querySelector('.detail-main').innerHTML = '<div style="text-align: center; padding: 50px;"><h2>Không tìm thấy sách</h2><p>Sách bạn tìm kiếm không tồn tại hoặc đã bị xóa.</p><a href="./book.html" class="btn btn-primary">Quay lại trang sách</a></div>';
     }

@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  const API_BASE = 'http://localhost:5001/api/books';
+  const API_BASE = 'http://localhost:5001/api/admin/books';
   const PAGE_SIZE_DEFAULT = 10;
 
   function getToken() {
@@ -25,9 +25,11 @@
     page: 1,
     limit: PAGE_SIZE_DEFAULT,
     total: 0,
-    filters: { keyword: '', category: '' },
+    filters: { keyword: '', category: '', price: '' },
     rows: [],
+    allRows: [],
     categories: [],
+    sort: { sortBy: 'book_id', sortOrder: 'ASC' }
   };
 
   const els = {};
@@ -35,12 +37,28 @@
   function cache() {
     els.keyword = $('#keyword');
     els.category = $('#category-filter');
+    els.price = $('#price-filter');
+    els.pageSize = $('#page-size');
     els.btnSearch = $('#btn-search');
     els.btnRefresh = $('#btn-refresh');
     els.table = $('#book-table');
     els.tbody = els.table ? els.table.querySelector('tbody') : null;
     els.pagination = $('#pagination');
     els.btnCreate = $('#btn-create-book');
+
+    if (els.pageSize) {
+      els.pageSize.value = '10';
+      state.limit = 10;
+    }
+  }
+
+  function getSelectedPageSize(totalRows = 0) {
+    const selected = (els.pageSize && els.pageSize.value) || '10';
+    if (selected === 'all') {
+      return Math.max(1, Number(totalRows) || 1);
+    }
+    const n = Number(selected);
+    return Number.isFinite(n) && n > 0 ? n : PAGE_SIZE_DEFAULT;
   }
 
   function escapeHtml(str) {
@@ -60,13 +78,19 @@
     if (state.filters.category) { els.category.value = state.filters.category; }
   }
 
+  function getImagePath(imageUrl) {
+    if (!imageUrl) return '../images/pages/sample-book.png';
+    if (imageUrl.startsWith('/') || imageUrl.startsWith('http')) return imageUrl;
+    return '../' + imageUrl;
+  }
+
   function renderRows() {
     if (!els.tbody) return;
     if (!state.rows || state.rows.length === 0) { return renderEmpty(); }
     const startIndex = (state.page - 1) * state.limit;
     els.tbody.innerHTML = state.rows.map((b, i) => {
       const idx = startIndex + i + 1;
-      const img = b.image_url || '../images/pages/sample-book.png';
+      const img = getImagePath(b.image_url);
       const categories = (b.categories || '').split(',').filter(Boolean).join(', ');
       const created = b.publish_date ? new Date(b.publish_date).toLocaleDateString('vi-VN') : '';
       return `
@@ -102,7 +126,15 @@
   }
 
   async function fetchJSON(url, options = {}) {
-    const res = await fetch(url, options);
+    const token = getToken();
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const res = await fetch(url, { ...options, headers });
     const data = await res.json().catch(() => null);
     if (!res.ok) { throw new Error((data && (data.message || data.error)) || `HTTP ${res.status}`); }
     return data;
@@ -110,7 +142,7 @@
 
   async function loadCategories() {
     try {
-      const data = await fetchJSON(`${API_BASE}/categories/all`);
+      const data = await fetchJSON('http://localhost:5001/api/admin/categories');
       state.categories = Array.isArray(data) ? data : (data && data.data) || [];
       renderCategories();
     } catch (err) { console.error(err); }
@@ -124,7 +156,55 @@
       const cat = state.filters.category.toLowerCase();
       items = items.filter(b => String(b.categories || '').toLowerCase().split(',').map(s => s.trim()).includes(cat));
     }
+    if (state.filters.price) {
+      const [minStr, maxStr] = state.filters.price.split('-');
+      const min = parseInt(minStr) || 0;
+      const max = parseInt(maxStr) || 999999999;
+      items = items.filter(b => {
+        const price = Number(b.price || 0);
+        return price >= min && price <= max;
+      });
+    }
     return items;
+  }
+
+  function applySorting(rows) {
+    if (!rows || rows.length === 0) return rows;
+    const sorted = [...rows];
+    sorted.sort((a, b) => {
+      let aVal, bVal;
+      if (state.sort.sortBy === 'book_id') {
+        aVal = Number(a.id || a.book_id || 0);
+        bVal = Number(b.id || b.book_id || 0);
+      } else if (state.sort.sortBy === 'price') {
+        aVal = Number(a.price || 0);
+        bVal = Number(b.price || 0);
+      } else if (state.sort.sortBy === 'publish_date') {
+        aVal = new Date(a.publish_date || 0).getTime();
+        bVal = new Date(b.publish_date || 0).getTime();
+      } else {
+        return 0;
+      }
+      if (state.sort.sortOrder === 'ASC') {
+        return aVal - bVal;
+      } else {
+        return bVal - aVal;
+      }
+    });
+    return sorted;
+  }
+
+  function renderCurrentView() {
+    const filtered = applyClientFilters(state.allRows || []);
+    const sorted = applySorting(filtered);
+    state.limit = getSelectedPageSize(sorted.length);
+    state.total = sorted.length;
+    const start = (state.page - 1) * state.limit;
+    state.rows = sorted.slice(start, start + state.limit);
+
+    renderRows();
+    renderPagination();
+    updateSortIndicators();
   }
 
   async function loadBooks({ page = 1, limit = state.limit } = {}) {
@@ -132,21 +212,159 @@
     state.page = page; state.limit = limit;
     renderLoading();
     try {
-      const data = await fetchJSON(API_BASE);
+      console.log('Loading books from:', API_BASE);
+      const params = new URLSearchParams({ page: 1, limit: 1000 });
+      const url = `${API_BASE}?${params.toString()}`;
+      console.log('Request URL:', url);
+      
+      const data = await fetchJSON(url);
+      console.log('API Response:', data);
+      
       const rows = Array.isArray(data) ? data : (data && data.data) || [];
-      // tạm thời filter + paginate ở client vì API chưa có query page/limit
-      const filtered = applyClientFilters(rows);
-      state.total = filtered.length;
-      const start = (state.page - 1) * state.limit;
-      state.rows = filtered.slice(start, start + state.limit);
-      renderRows();
-      renderPagination();
+      state.allRows = rows;
+      console.log('Total rows from API:', rows.length);
+      
+      renderCurrentView();
+      bindSortListeners();
     } catch (err) {
-      console.error(err);
+      console.error('Error loading books:', err);
+      console.error('Error message:', err.message);
+      console.error('Error details:', err);
       renderEmpty();
     } finally {
       state.loading = false;
     }
+  }
+
+  // ─── Form helpers ─────────────────────────────────────────
+  function showErr(id, msg) { const el = document.getElementById(id); if (el) el.textContent = msg; }
+  function clearErr(...ids) { ids.forEach(id => { const el = document.getElementById(id); if (el) el.textContent = ''; }); }
+
+  function renderCategorySelect(selectId, excludeNames = []) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    const exclude = excludeNames.map(s => s.trim().toLowerCase());
+    const filtering = state.categories.filter(c => !exclude.includes((c.name || '').trim().toLowerCase()));
+    select.innerHTML = '<option value="">-- Chọn thể loại --</option>' +
+      filtering.map(c => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)}</option>`).join('');
+  }
+
+  function renderCategoryTags(containerId, selectedNames = [], selectId = '', addBtnId = '') {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = selectedNames.map(name => `
+      <span class="category-tag">
+        ${escapeHtml(name)}
+        <button type="button" class="remove-btn" data-name="${escapeHtml(name)}" title="Xóa">×</button>
+      </span>
+    `).join('');
+    
+    // Bind remove button events
+    container.querySelectorAll('.remove-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const name = btn.getAttribute('data-name');
+        selectedNames = selectedNames.filter(n => n !== name);
+        renderCategoryTags(containerId, selectedNames, selectId, addBtnId);
+        if (selectId) renderCategorySelect(selectId, selectedNames);
+      });
+    });
+  }
+
+  function getSelectedCategoriesFromTags(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return [];
+    return [...container.querySelectorAll('.category-tag')].map(tag => {
+      const btn = tag.querySelector('.remove-btn');
+      return btn ? btn.getAttribute('data-name') : '';
+    }).filter(Boolean);
+  }
+
+  function setImagePreview(previewId, src) {
+    const el = document.getElementById(previewId);
+    if (!el) return;
+    if (src) { el.src = src; el.style.display = 'block'; }
+    else { el.src = ''; el.style.display = 'none'; }
+  }
+
+  function initSortHeaders() {
+    const thead = document.querySelector('#book-table thead tr');
+    if (!thead) return;
+
+    const ths = thead.querySelectorAll('th');
+    ths.forEach(th => {
+      const columnName = th.textContent.trim().toLowerCase();
+      if (columnName.includes('mã sách')) th.dataset.sortField = 'book_id';
+      else if (columnName.includes('giá')) th.dataset.sortField = 'price';
+      else if (columnName.includes('ngày xuất bản')) th.dataset.sortField = 'publish_date';
+    });
+  }
+
+  function updateSortIndicators() {
+    const thead = document.querySelector('#book-table thead tr');
+    if (!thead) return;
+    
+    const ths = thead.querySelectorAll('th');
+    ths.forEach(th => {
+      // Remove old indicators
+      const oldSpan = th.querySelector('.sort-indicator');
+      if (oldSpan) oldSpan.remove();
+      
+      // Add new indicator if this is the current sort column
+      const fieldName = th.dataset.sortField || null;
+      
+      if (fieldName === state.sort.sortBy) {
+        const indicator = state.sort.sortOrder === 'ASC' ? '▲' : '▼';
+        const span = document.createElement('span');
+        span.className = 'sort-indicator';
+        span.textContent = ' ' + indicator;
+        span.style.marginLeft = '5px';
+        span.style.color = '#3b82f6';
+        span.style.fontSize = '12px';
+        th.appendChild(span);
+      }
+    });
+  }
+
+  function bindSortListeners() {
+    const thead = document.querySelector('#book-table thead tr');
+    if (!thead) return;
+    
+    const ths = thead.querySelectorAll('th');
+    ths.forEach(th => {
+      const fieldName = th.dataset.sortField || null;
+      
+      if (fieldName) {
+        if (th.dataset.sortBound === '1') return;
+        th.dataset.sortBound = '1';
+        th.style.cursor = 'pointer';
+        th.addEventListener('click', () => {
+          // Toggle sort order if clicking same column, else set to ASC
+          if (state.sort.sortBy === fieldName) {
+            state.sort.sortOrder = state.sort.sortOrder === 'ASC' ? 'DESC' : 'ASC';
+          } else {
+            state.sort.sortBy = fieldName;
+            state.sort.sortOrder = 'ASC';
+          }
+          state.page = 1;
+          loadBooks({ page: 1 });
+        });
+      }
+    });
+  }
+
+  async function uploadBookImage(bookId, fileInput) {
+    if (!fileInput || !fileInput.files || !fileInput.files[0]) return null;
+    const formData = new FormData();
+    formData.append('image', fileInput.files[0]);
+    const res = await fetch(`http://localhost:5001/api/admin/books/${bookId}/image`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${getToken()}` },
+      body: formData
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) throw new Error((data && data.message) || 'Lỗi upload ảnh');
+    return data.imageUrl;
   }
 
   function bind() {
@@ -155,6 +373,7 @@
         state.page = 1;
         state.filters.keyword = (els.keyword && els.keyword.value) || '';
         state.filters.category = (els.category && els.category.value) || '';
+        state.filters.price = (els.price && els.price.value) || '';
         loadBooks({ page: 1 });
       });
     }
@@ -162,7 +381,8 @@
       els.btnRefresh.addEventListener('click', () => {
         if (els.keyword) els.keyword.value = '';
         if (els.category) els.category.value = '';
-        state.filters = { keyword: '', category: '' };
+        if (els.price) els.price.value = '';
+        state.filters = { keyword: '', category: '', price: '' };
         state.page = 1;
         loadBooks({ page: 1 });
       });
@@ -171,7 +391,16 @@
       els.pagination.addEventListener('click', (e) => {
         const btn = e.target.closest('.page-btn'); if (!btn) return;
         const p = Number(btn.getAttribute('data-page')) || 1;
-        if (p === state.page) return; loadBooks({ page: p });
+        if (p === state.page) return;
+        state.page = p;
+        renderCurrentView();
+      });
+    }
+    if (els.pageSize) {
+      els.pageSize.addEventListener('change', () => {
+        state.page = 1;
+        state.limit = getSelectedPageSize(state.allRows.length);
+        renderCurrentView();
       });
     }
     if (els.table) {
@@ -181,15 +410,39 @@
         if (e.target.closest('.btn-edit')) {
           const book = state.rows.find(b => String(b.id || b.book_id) === String(id));
           if (!book) return;
-          const editBookModal = document.getElementById('editBookModal');
           document.getElementById('eb-id').value = id;
           document.getElementById('eb-name').value = book.name || book.book_name || '';
           document.getElementById('eb-author').value = book.author || book.author_name || '';
           document.getElementById('eb-price').value = book.price || '';
           document.getElementById('eb-description').value = book.description || '';
-          document.getElementById('eb-image').value = book.image_url || '';
-          document.getElementById('eb-categories').value = (book.categories || '').split(',').map(c => c.trim()).filter(Boolean).join(', ');
-
+          document.getElementById('eb-publish-date').value = book.publish_date
+            ? String(book.publish_date).split('T')[0] : '';
+          // Image preview
+          setImagePreview('eb-image-preview', getImagePath(book.image_url));
+          const ebFile = document.getElementById('eb-image-file');
+          if (ebFile) ebFile.value = '';
+          // Categories tags
+          const bookCats = (book.categories || '').split(',').map(c => c.trim()).filter(Boolean);
+          renderCategoryTags('eb-categories-tags', bookCats);
+          renderCategorySelect('eb-category-select', bookCats);
+          // Bind add category button
+          const addBtn = document.getElementById('eb-add-category-btn');
+          const select = document.getElementById('eb-category-select');
+          if (addBtn) {
+            addBtn.onclick = (e) => {
+              e.preventDefault();
+              if (!select || !select.value) { alert('Chọn thể loại trước'); return; }
+              const current = getSelectedCategoriesFromTags('eb-categories-tags');
+              if (current.includes(select.value)) { alert('Thể loại này đã được chọn'); return; }
+              current.push(select.value);
+              renderCategoryTags('eb-categories-tags', current, 'eb-category-select', 'eb-add-category-btn');
+              renderCategorySelect('eb-category-select', current);
+              select.value = '';
+            };
+          }
+          // Clear old errors
+          clearErr('eb-name-err', 'eb-author-err', 'eb-price-err', 'eb-categories-err');
+          const editBookModal = document.getElementById('editBookModal');
           if (editBookModal) editBookModal.style.display = 'flex';
         } else if (e.target.closest('.btn-delete')) {
           if (confirm('Xác nhận xóa sách ID: ' + id + ' ?')) {
@@ -213,7 +466,33 @@
     if (els.btnCreate) {
       els.btnCreate.addEventListener('click', () => {
         const createBookModal = document.getElementById('createBookModal');
-        if (createBookModal) createBookModal.style.display = 'flex';
+        if (createBookModal) {
+          const form = document.getElementById('create-book-form');
+          if (form) form.reset();
+          clearErr('cb-name-err', 'cb-author-err', 'cb-price-err', 'cb-categories-err');
+          renderCategorySelect('cb-category-select');
+          renderCategoryTags('cb-categories-tags', []);
+          setImagePreview('cb-image-preview', '');
+          
+          // Bind add category button
+          const addBtn = document.getElementById('cb-add-category-btn');
+          const select = document.getElementById('cb-category-select');
+          const tagsDiv = document.getElementById('cb-categories-tags');
+          if (addBtn) {
+            addBtn.onclick = (e) => {
+              e.preventDefault();
+              if (!select || !select.value) { alert('Chọn thể loại trước'); return; }
+              const current = getSelectedCategoriesFromTags('cb-categories-tags');
+              if (current.includes(select.value)) { alert('Thể loại này đã được chọn'); return; }
+              current.push(select.value);
+              renderCategoryTags('cb-categories-tags', current, 'cb-category-select', 'cb-add-category-btn');
+              renderCategorySelect('cb-category-select', current);
+              select.value = '';
+            };
+          }
+          
+          createBookModal.style.display = 'flex';
+        }
       });
     }
 
@@ -222,36 +501,63 @@
       createBookForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const catValue = document.getElementById('cb-categories').value;
-        const categories = catValue ? catValue.split(',').map(c => c.trim()).filter(Boolean) : [];
+        const nameVal = document.getElementById('cb-name').value.trim();
+        const authorVal = document.getElementById('cb-author').value.trim();
+        const priceStr = document.getElementById('cb-price').value.trim();
+        const price = parseFloat(priceStr);
+        const desc = document.getElementById('cb-description').value.trim();
+        const publishDate = document.getElementById('cb-publish-date').value;
+        const categories = getSelectedCategoriesFromTags('cb-categories-tags');
 
-        const body = {
-          bookName: document.getElementById('cb-name').value,
-          authorName: document.getElementById('cb-author').value,
-          price: Number(document.getElementById('cb-price').value),
-          description: document.getElementById('cb-description').value,
-          imageUrl: document.getElementById('cb-image').value,
-          categories: categories
-        };
+        clearErr('cb-name-err', 'cb-author-err', 'cb-price-err', 'cb-categories-err');
+        let valid = true;
+        if (!nameVal) { showErr('cb-name-err', 'Tên sách không được để trống'); valid = false; }
+        else if (nameVal.length > 50) { showErr('cb-name-err', 'Tên sách tối đa 50 ký tự'); valid = false; }
+        if (!authorVal) { showErr('cb-author-err', 'Tên tác giả không được để trống'); valid = false; }
+        else if (authorVal.length > 50) { showErr('cb-author-err', 'Tên tác giả tối đa 50 ký tự'); valid = false; }
+        if (!priceStr || isNaN(price) || price <= 0) { showErr('cb-price-err', 'Giá phải là số thực dương'); valid = false; }
+        if (categories.length === 0) { showErr('cb-categories-err', 'Vui lòng chọn ít nhất một thể loại'); valid = false; }
+        if (!valid) return;
 
+        const submitBtn = document.getElementById('cb-submit-btn');
+        if (submitBtn) submitBtn.disabled = true;
         try {
+          // 1. Tạo sách (chưa có ảnh)
           const res = await fetch('http://localhost:5001/api/admin/books', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${getToken()}`
-            },
-            body: JSON.stringify(body)
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+            body: JSON.stringify({ bookName: nameVal, authorName: authorVal, price, description: desc, publishDate: publishDate || null, imageUrl: null, categories })
           });
           const data = await res.json().catch(() => null);
           if (!res.ok) throw new Error((data && (data.message || data.error)) || 'Lỗi thêm sách');
+          const bookId = data.bookId;
+
+          // 2. Upload ảnh nếu có file, rồi cập nhật imageUrl
+          const cbFile = document.getElementById('cb-image-file');
+          if (cbFile && cbFile.files && cbFile.files[0] && bookId) {
+            try {
+              const imageUrl = await uploadBookImage(bookId, cbFile);
+              if (imageUrl) {
+                await fetch(`http://localhost:5001/api/admin/books/${bookId}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+                  body: JSON.stringify({ bookName: nameVal, authorName: authorVal, price, description: desc, publishDate: publishDate || null, imageUrl, categories })
+                });
+              }
+            } catch (imgErr) { console.warn('Upload ảnh thất bại:', imgErr.message); }
+          }
 
           alert('Thêm sách thành công');
           document.getElementById('createBookModal').style.display = 'none';
           createBookForm.reset();
+          renderCategorySelect('cb-category-select');
+          renderCategoryTags('cb-categories-tags', []);
+          setImagePreview('cb-image-preview', '');
           loadBooks({ page: 1 });
         } catch (err) {
           alert(err.message || 'Lỗi thêm sách');
+        } finally {
+          if (submitBtn) submitBtn.disabled = false;
         }
       });
     }
@@ -262,26 +568,43 @@
         e.preventDefault();
 
         const id = document.getElementById('eb-id').value;
-        const catValue = document.getElementById('eb-categories').value;
-        const categories = catValue ? catValue.split(',').map(c => c.trim()).filter(Boolean) : [];
+        const nameVal = document.getElementById('eb-name').value.trim();
+        const authorVal = document.getElementById('eb-author').value.trim();
+        const priceStr = document.getElementById('eb-price').value.trim();
+        const price = parseFloat(priceStr);
+        const desc = document.getElementById('eb-description').value.trim();
+        const publishDate = document.getElementById('eb-publish-date').value;
+        const categories = getSelectedCategoriesFromTags('eb-categories-tags');
 
-        const body = {
-          bookName: document.getElementById('eb-name').value,
-          authorName: document.getElementById('eb-author').value,
-          price: Number(document.getElementById('eb-price').value),
-          description: document.getElementById('eb-description').value,
-          imageUrl: document.getElementById('eb-image').value,
-          categories: categories
-        };
+        clearErr('eb-name-err', 'eb-author-err', 'eb-price-err', 'eb-categories-err');
+        let valid = true;
+        if (!nameVal) { showErr('eb-name-err', 'Tên sách không được để trống'); valid = false; }
+        else if (nameVal.length > 50) { showErr('eb-name-err', 'Tên sách tối đa 50 ký tự'); valid = false; }
+        if (!authorVal) { showErr('eb-author-err', 'Tên tác giả không được để trống'); valid = false; }
+        else if (authorVal.length > 50) { showErr('eb-author-err', 'Tên tác giả tối đa 50 ký tự'); valid = false; }
+        if (!priceStr || isNaN(price) || price <= 0) { showErr('eb-price-err', 'Giá phải là số thực dương'); valid = false; }
+        if (categories.length === 0) { showErr('eb-categories-err', 'Vui lòng chọn ít nhất một thể loại'); valid = false; }
+        if (!valid) return;
 
+        const submitBtn = document.getElementById('eb-submit-btn');
+        if (submitBtn) submitBtn.disabled = true;
         try {
+          // Upload ảnh mới nếu chọn file
+          let imageUrl = null;
+          const ebFile = document.getElementById('eb-image-file');
+          if (ebFile && ebFile.files && ebFile.files[0]) {
+            imageUrl = await uploadBookImage(id, ebFile);
+          }
+          // Giữ ảnh cũ nếu không chọn file mới
+          if (!imageUrl) {
+            const book = state.rows.find(b => String(b.id || b.book_id) === String(id));
+            imageUrl = (book && book.image_url) || null;
+          }
+
           const res = await fetch(`http://localhost:5001/api/admin/books/${id}`, {
             method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${getToken()}`
-            },
-            body: JSON.stringify(body)
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+            body: JSON.stringify({ bookName: nameVal, authorName: authorVal, price, description: desc, publishDate: publishDate || null, imageUrl, categories })
           });
           const data = await res.json().catch(() => null);
           if (!res.ok) throw new Error((data && (data.message || data.error)) || 'Lỗi cập nhật sách');
@@ -292,6 +615,40 @@
           loadBooks({ page: state.page });
         } catch (err) {
           alert(err.message || 'Lỗi cập nhật sách');
+        } finally {
+          if (submitBtn) submitBtn.disabled = false;
+        }
+      });
+    }
+
+    // Image preview handlers
+    const cbImageFile = document.getElementById('cb-image-file');
+    if (cbImageFile) {
+      cbImageFile.addEventListener('change', () => {
+        const file = cbImageFile.files && cbImageFile.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = ev => setImagePreview('cb-image-preview', ev.target.result);
+          reader.readAsDataURL(file);
+        } else {
+          setImagePreview('cb-image-preview', '');
+        }
+      });
+    }
+
+    const ebImageFile = document.getElementById('eb-image-file');
+    if (ebImageFile) {
+      ebImageFile.addEventListener('change', () => {
+        const file = ebImageFile.files && ebImageFile.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = ev => setImagePreview('eb-image-preview', ev.target.result);
+          reader.readAsDataURL(file);
+        } else {
+          // Revert to original book image
+          const id = document.getElementById('eb-id').value;
+          const book = state.rows.find(b => String(b.id || b.book_id) === String(id));
+          setImagePreview('eb-image-preview', getImagePath(book?.image_url));
         }
       });
     }
@@ -300,6 +657,7 @@
   async function init() {
     if (!ensureAdmin()) return;
     cache();
+    initSortHeaders();
     bind();
     await loadCategories();
     await loadBooks({ page: 1 });

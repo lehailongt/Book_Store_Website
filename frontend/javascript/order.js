@@ -1,7 +1,7 @@
 // order.js - quản lý đơn hàng cho người dùng đã đăng nhập
 
-const API_MY_ORDERS = '/api/orders/my-orders';
-const API_ORDER_DETAIL = '/api/orders';
+const API_BASE = 'http://localhost:5001/api';
+const API_ORDERS = `${API_BASE}/orders`;
 
 function getToken() {
     return localStorage.getItem('accessToken') || localStorage.getItem('token') || '';
@@ -56,25 +56,26 @@ function renderOrderDetails(order) {
     let html = '<div class="order-details" style="text-align: left; padding: 15px; background: #f9f9f9; border-radius: 8px; margin-top: 10px;">';
     html += '<h4>Sản phẩm</h4><ul style="padding-left: 20px;">';
 
-    const items = order.items || order.orderItems || [];
+    const items = order.items || order.order_details || [];
     items.forEach(item => {
-        const name = (item.book && (item.book.title || item.book.name)) || item.title || item.name || 'Sản phẩm';
-        const price = item.price != null ? item.price : item.unitPrice || 0;
-        const qty = item.quantity != null ? item.quantity : item.qty || 1;
+        const name = item.name || item.book_name || 'Sản phẩm';
+        const price = item.price || 0;
+        const qty = item.quantity || 1;
         html += `<li style="margin-bottom: 5px;">${name} x ${qty} - ${formatPrice(price * qty)}đ</li>`;
     });
 
     html += '</ul>';
 
-    const total = order.totalAmount != null ? order.totalAmount : order.total;
+    const total = order.total_amount || 0;
     html += `<p style="margin-top: 10px;"><strong>Tổng thanh toán:</strong> ${formatPrice(total)}đ</p>`;
 
     html += '<hr style="margin: 15px 0;">';
     html += '<h4>Thông tin giao hàng</h4>';
-    const addr = order.address || order.shippingAddress || order.shipping?.address || 'Chưa cập nhật';
+    const addr = order.delivery_address || 'Chưa cập nhật';
     html += `<p>${addr}</p>`;
 
-    html += `<p><strong>Phương thức Thanh toán:</strong> ${order.payment || order.paymentMethod || 'COD'}</p>`;
+    const status = order.status || 'shipped';
+    html += `<p><strong>Trạng thái:</strong> ${status}</p>`;
     html += '</div>';
 
     return html;
@@ -99,7 +100,7 @@ async function renderOrdersForUser() {
 
     try {
         let orders = [];
-        const res = await fetchOrdersAPI(API_MY_ORDERS).catch(() => null);
+        const res = await fetchOrdersAPI(API_ORDERS).catch(() => null);
 
         // Mock fallback if backend fails
         if (!res) {
@@ -125,20 +126,20 @@ async function renderOrdersForUser() {
 
         orders.forEach(order => {
             const tr = document.createElement('tr');
-            const dateStr = new Date(order.createdAt || order.created_at).toLocaleString('vi-VN');
-            const status = order.status || 'Pending';
+            const dateStr = new Date(order.created_at || order.createdAt).toLocaleString('vi-VN');
+            const status = order.status || 'shipped';
 
             let statusBadge = 'info';
             const sLower = String(status).toLowerCase();
             if (sLower === 'pending') statusBadge = 'warning';
-            if (sLower === 'processing' || sLower === 'shipped') statusBadge = 'primary';
-            if (sLower === 'completed' || sLower === 'delivered') statusBadge = 'success';
-            if (sLower === 'canceled') statusBadge = 'danger';
+            if (sLower === 'shipped') statusBadge = 'primary';
+            if (sLower === 'delivered') statusBadge = 'success';
+            if (sLower === 'cancelled') statusBadge = 'danger';
 
-            const total = order.totalAmount != null ? order.totalAmount : order.total;
+            const total = order.total_amount || 0;
 
             tr.innerHTML = `
-                <td>#${shortId(order.id || order._id)}</td>
+                <td>#${shortId(order.order_id)}</td>
                 <td>${dateStr}</td>
                 <td>${formatPrice(total)}đ</td>
                 <td><span class="badge badge-${statusBadge}">${status}</span></td>
@@ -158,12 +159,16 @@ async function renderOrdersForUser() {
             tr.querySelector('.view-btn').addEventListener('click', async () => {
                 if (detailsCell.style.display === 'none') {
                     // Try fetch detail if items not present
-                    if (!order.items && !order.orderItems) {
+                    if (!order.items && !order.order_details) {
                         detailsCell.innerHTML = '<div style="text-align:center; padding: 10px;">Đang tải chi tiết...</div>';
                         detailsCell.style.display = 'table-cell';
                         try {
-                            const detailData = await fetchOrdersAPI(`${API_ORDER_DETAIL}/${order.id || order._id}`);
-                            const fullOrder = detailData.data || detailData;
+                            const detailData = await fetchOrdersAPI(`${API_ORDERS}/${order.order_id}`);
+                            const fullOrderData = detailData.data || detailData;
+                            const fullOrder = {
+                                ...order,
+                                items: fullOrderData.order_details || []
+                            };
                             detailsCell.innerHTML = renderOrderDetails(fullOrder);
                         } catch (e) {
                             detailsCell.innerHTML = '<div style="color:red; text-align:center;">Lỗi tải chi tiết</div>';
@@ -178,35 +183,11 @@ async function renderOrdersForUser() {
             });
 
             const cancelBtn = tr.querySelector('.cancel-btn');
-            if (sLower !== 'pending') {
-                cancelBtn.disabled = true;
-                cancelBtn.style.opacity = '0.5';
-                cancelBtn.style.cursor = 'not-allowed';
-            }
-
-            cancelBtn.addEventListener('click', async () => {
-                if (sLower !== 'pending') return;
-                if (!confirm('Bạn có chắc muốn hủy đơn hàng này?')) return;
-
-                try {
-                    await fetchOrdersAPI(`${API_ORDER_DETAIL}/${order.id || order._id}/cancel`, {
-                        method: 'PATCH'
-                    }).catch(err => {
-                        // Local sync if api fails
-                        const all = JSON.parse(localStorage.getItem('orders') || '[]');
-                        const idx = all.findIndex(o => o.id === (order.id || order._id));
-                        if (idx > -1) {
-                            all[idx].status = 'Canceled';
-                            localStorage.setItem('orders', JSON.stringify(all));
-                        }
-                    });
-
-                    alert('Đã hủy đơn hàng thành công!');
-                    renderOrdersForUser(); // reload
-                } catch (e) {
-                    alert('Hủy đơn hàng thất bại: ' + e.message);
-                }
-            });
+            // Disable cancel button for now
+            cancelBtn.disabled = true;
+            cancelBtn.style.opacity = '0.5';
+            cancelBtn.style.cursor = 'not-allowed';
+            cancelBtn.title = 'Chức năng đang được phát triển';
 
             tbody.appendChild(tr);
             tbody.appendChild(detailsRow);

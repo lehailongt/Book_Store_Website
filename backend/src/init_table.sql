@@ -57,7 +57,7 @@ CREATE TABLE orders (
     order_id 			INT AUTO_INCREMENT PRIMARY KEY,
     user_id 			INT NOT NULL,
     total_amount 		DECIMAL(12,2) NOT NULL DEFAULT 0 CHECK (total_amount >= 0),
-    status 				ENUM('pending', 'shipped', 'delivered', 'cancelled') DEFAULT 'pending',
+    status 				ENUM('shipped', 'delivered', 'cancelled') DEFAULT 'shipped',
     delivery_address 	VARCHAR(100) NOT NULL,
     created_at 			TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE RESTRICT

@@ -1,6 +1,17 @@
 import pool from '../config/database.js';
 
 export class BookModel {
+    // Helper: Transform categories string to array
+    static transformCategoriesToArray(book) {
+        if (!book) return null;
+        return {
+            ...book,
+            categories: book.categories 
+                ? book.categories.split(',').map(cat => ({ name: cat.trim() }))
+                : []
+        };
+    }
+
     // Lấy tất cả sách
     static async getAllBooks() {
         try {
@@ -20,7 +31,7 @@ export class BookModel {
                 GROUP BY b.book_id
                 ORDER BY b.book_id DESC
             `);
-            return books;
+            return books.map(book => this.transformCategoriesToArray(book));
         } catch (error) {
             console.error('Error getting all books:', error);
             throw error;
@@ -46,7 +57,8 @@ export class BookModel {
                 WHERE b.book_id = ?
                 GROUP BY b.book_id
             `, [bookId]);
-            return books[0] || null;
+            const book = books[0] || null;
+            return book ? this.transformCategoriesToArray(book) : null;
         } catch (error) {
             console.error('Error getting book by ID:', error);
             throw error;
@@ -73,7 +85,7 @@ export class BookModel {
                 GROUP BY b.book_id
                 ORDER BY b.book_id DESC
             `, [categoryName]);
-            return books;
+            return books.map(book => this.transformCategoriesToArray(book));
         } catch (error) {
             console.error('Error getting books by category:', error);
             throw error;
@@ -166,6 +178,37 @@ export class BookModel {
             return true;
         } catch (error) {
             console.error('Error removing category from book:', error);
+            throw error;
+        }
+    }
+
+    // Lấy sách phổ biến (top books by quantity sold - chỉ đơn hàng đã giao/đang giao)
+    static async getPopularBooks(limit = 10) {
+        try {
+            const [books] = await pool.query(`
+                SELECT 
+                    b.book_id as id,
+                    b.book_name as name,
+                    b.author_name as author,
+                    b.price,
+                    b.description,
+                    b.image_url,
+                    b.publish_date,
+                    GROUP_CONCAT(c.category_name) as categories,
+                    COALESCE(SUM(oi.quantity), 0) as total_sold
+                FROM books b
+                LEFT JOIN bookcategories bc ON b.book_id = bc.book_id
+                LEFT JOIN categories c ON bc.category_id = c.category_id
+                LEFT JOIN orderitems oi ON b.book_id = oi.book_id
+                LEFT JOIN orders o ON oi.order_id = o.order_id 
+                    AND (o.status = 'Đã giao' OR o.status = 'Đang giao')
+                GROUP BY b.book_id, b.book_name, b.author_name, b.price, b.description, b.image_url, b.publish_date
+                ORDER BY total_sold DESC, b.book_id DESC
+                LIMIT ?
+            `, [limit]);
+            return books.map(book => this.transformCategoriesToArray(book));
+        } catch (error) {
+            console.error('Error getting popular books:', error);
             throw error;
         }
     }

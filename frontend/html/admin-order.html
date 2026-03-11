@@ -42,7 +42,7 @@
           <div class="table-toolbar">
             <div class="search">
               <i class="bi bi-search"></i>
-              <input id="keyword" class="input" placeholder="Nhập mã đơn hàng" />
+              <input id="keyword" class="input" placeholder="Nhập tên người" />
             </div>
 
             <select id="status" class="filter-select">
@@ -77,7 +77,18 @@
             </tbody>
           </table>
         </div>
-        <div id="pagination" style="margin-top:10px"></div>
+          <div class="table-bottom-bar" style="margin-top:10px">
+            <div class="page-size-control">
+              <label for="page-size">Hiển thị:</label>
+              <select id="page-size" class="filter-select" title="Số dòng mỗi trang">
+                <option value="5">5 dòng</option>
+                <option value="10" selected>10 dòng</option>
+                <option value="20">20 dòng</option>
+                <option value="all">1 page</option>
+              </select>
+            </div>
+            <div id="pagination"></div>
+          </div>
       </div>
     </main>
 

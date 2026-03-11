@@ -105,12 +105,15 @@
       to: '',
     },
     rows: [],
+    allRows: [],
+    sort: { sortBy: 'order_id', sortOrder: 'ASC' },
   };
 
   const els = {};
 
   function cacheElements() {
     els.keyword = document.getElementById('keyword');
+    els.pageSize = document.getElementById('page-size');
     els.status = document.getElementById('status');
     els.from = document.getElementById('from-date');
     els.to = document.getElementById('to-date');
@@ -132,6 +135,20 @@
       els.detailAddress = document.getElementById('detail-address');
       els.detailPayment = document.getElementById('detail-payment');
     }
+
+    if (els.pageSize) {
+      els.pageSize.value = '10';
+      state.limit = 10;
+    }
+  }
+
+  function getSelectedPageSize(totalRows = 0) {
+    const selected = (els.pageSize && els.pageSize.value) || '10';
+    if (selected === 'all') {
+      return Math.max(1, Number(totalRows) || 1);
+    }
+    const n = Number(selected);
+    return Number.isFinite(n) && n > 0 ? n : PAGE_SIZE_DEFAULT;
   }
 
   function renderLoading() {
@@ -150,6 +167,109 @@
         <td colspan="8" style="text-align:center;">Không có dữ liệu</td>
       </tr>
     `;
+  }
+
+  function initSortHeaders() {
+    const thead = document.querySelector('#order-table thead tr');
+    if (!thead) return;
+
+    const ths = thead.querySelectorAll('th');
+    ths.forEach((th) => {
+      const name = th.textContent.trim().toLowerCase();
+      if (name.includes('mã đơn')) th.dataset.sortField = 'order_id';
+      else if (name.includes('tổng tiền')) th.dataset.sortField = 'total_amount';
+      else if (name.includes('ngày tạo')) th.dataset.sortField = 'created_at';
+    });
+  }
+
+  function updateSortIndicators() {
+    const thead = document.querySelector('#order-table thead tr');
+    if (!thead) return;
+
+    const ths = thead.querySelectorAll('th');
+    ths.forEach((th) => {
+      const oldSpan = th.querySelector('.sort-indicator');
+      if (oldSpan) oldSpan.remove();
+
+      const fieldName = th.dataset.sortField || '';
+      if (fieldName !== state.sort.sortBy) return;
+
+      const indicator = state.sort.sortOrder === 'ASC' ? '▲' : '▼';
+      const span = document.createElement('span');
+      span.className = 'sort-indicator';
+      span.textContent = ` ${indicator}`;
+      span.style.marginLeft = '5px';
+      span.style.color = '#3b82f6';
+      span.style.fontSize = '12px';
+      th.appendChild(span);
+    });
+  }
+
+  function bindSortListeners() {
+    const thead = document.querySelector('#order-table thead tr');
+    if (!thead) return;
+
+    const ths = thead.querySelectorAll('th');
+    ths.forEach((th) => {
+      const fieldName = th.dataset.sortField || '';
+      if (!fieldName) return;
+      if (th.dataset.sortBound === '1') return;
+
+      th.dataset.sortBound = '1';
+      th.style.cursor = 'pointer';
+      th.addEventListener('click', () => {
+        if (state.sort.sortBy === fieldName) {
+          state.sort.sortOrder = state.sort.sortOrder === 'ASC' ? 'DESC' : 'ASC';
+        } else {
+          state.sort.sortBy = fieldName;
+          state.sort.sortOrder = 'ASC';
+        }
+        state.page = 1;
+        renderCurrentView();
+      });
+    });
+  }
+
+  function applyClientSort(rows) {
+    if (!Array.isArray(rows) || rows.length === 0) return [];
+    const sorted = [...rows];
+    const factor = state.sort.sortOrder === 'ASC' ? 1 : -1;
+
+    sorted.sort((a, b) => {
+      if (state.sort.sortBy === 'order_id') {
+        const aid = String(a.code || a.id || a._id || '');
+        const bid = String(b.code || b.id || b._id || '');
+        return aid.localeCompare(bid, 'vi', { numeric: true }) * factor;
+      }
+
+      if (state.sort.sortBy === 'total_amount') {
+        const at = Number(a.totalAmount != null ? a.totalAmount : a.total) || 0;
+        const bt = Number(b.totalAmount != null ? b.totalAmount : b.total) || 0;
+        return (at - bt) * factor;
+      }
+
+      if (state.sort.sortBy === 'created_at') {
+        const ad = new Date(a.createdAt || a.created_at || 0).getTime() || 0;
+        const bd = new Date(b.createdAt || b.created_at || 0).getTime() || 0;
+        return (ad - bd) * factor;
+      }
+
+      return 0;
+    });
+
+    return sorted;
+  }
+
+  function renderCurrentView() {
+    const sorted = applyClientSort(state.allRows || []);
+    state.limit = getSelectedPageSize(sorted.length);
+    state.total = sorted.length;
+    const start = (state.page - 1) * state.limit;
+    state.rows = sorted.slice(start, start + state.limit);
+
+    renderRows();
+    renderPagination();
+    updateSortIndicators();
   }
 
   function statusBadge(status) {
@@ -288,8 +408,8 @@
     if (state.filters.status) params.set('status', state.filters.status);
     if (state.filters.from) params.set('from', state.filters.from);
     if (state.filters.to) params.set('to', state.filters.to);
-    params.set('page', String(state.page));
-    params.set('limit', String(state.limit));
+    params.set('page', '1');
+    params.set('limit', '1000');
 
     try {
       const data = await fetchAdmin(`/orders?${params.toString()}`, { method: 'GET' });
@@ -306,11 +426,9 @@
         if (data.limit) state.limit = Number(data.limit) || state.limit;
       }
 
-      state.rows = rows;
+      state.allRows = rows;
       state.total = total;
-
-      renderRows();
-      renderPagination();
+      renderCurrentView();
     } catch (err) {
       console.error(err);
       showToast(err.message || 'Tải danh sách đơn hàng thất bại', 'error');
@@ -452,7 +570,16 @@
         if (!btn) return;
         const page = Number(btn.getAttribute('data-page')) || 1;
         if (page === state.page) return;
-        loadOrders({ page });
+        state.page = page;
+        renderCurrentView();
+      });
+    }
+
+    if (els.pageSize) {
+      els.pageSize.addEventListener('change', () => {
+        state.page = 1;
+        state.limit = getSelectedPageSize(state.allRows.length);
+        renderCurrentView();
       });
     }
 
@@ -493,6 +620,8 @@
   function init() {
     if (!ensureAdmin()) return;
     cacheElements();
+    initSortHeaders();
+    bindSortListeners();
     bindEvents();
     loadOrders({ page: 1 });
   }

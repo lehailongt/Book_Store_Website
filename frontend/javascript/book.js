@@ -1,6 +1,33 @@
 // API Configuration
 const API_BASE = 'http://localhost:5001/api';
 
+function getToken() {
+    return localStorage.getItem('accessToken') || localStorage.getItem('token') || '';
+}
+
+async function fetchAPI(url, options = {}) {
+    const token = getToken();
+    const headers = {
+        'Content-Type': 'application/json',
+        ...options.headers
+    };
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    try {
+        const response = await fetch(url, { ...options, headers });
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data?.message || `Lỗi: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('API Error:', error);
+        throw error;
+    }
+}
+
 // State Management
 const state = {
     allBooks: [],
@@ -40,11 +67,10 @@ async function fetchBooksData() {
                 name: book.name,
                 author: book.author,
                 price: parseInt(book.price),
-                originalPrice: parseInt(book.price) * 1.2, // Estimate original price as 20% higher
-                rating: 4.5, // Default rating
-                reviews: Math.floor(Math.random() * 500) + 50, // Random reviews
                 description: book.description || 'Không có mô tả',
-                category: (book.categories || 'Khác').split(',')[0].toLowerCase().replace(/\s+/g, '-'),
+                categories: book.categories || [],
+                image_url: book.image_url,
+                publish_date: book.publish_date,
                 keywords: book.name.toLowerCase()
             }));
             state.allBooks = [...window.booksData];
@@ -82,7 +108,7 @@ function populateCategories() {
         const label = document.createElement('label');
         label.className = 'checkbox-item';
         label.innerHTML = `
-            <input type="checkbox" value="${category.name.toLowerCase().replace(/\s+/g, '-')}" class="category-checkbox">
+            <input type="checkbox" value="${category.name}" class="category-checkbox">
             <span>${category.name}</span>
         `;
         categoriesList.appendChild(label);
@@ -124,11 +150,16 @@ function applyFilters() {
 
     state.filteredBooks = state.allBooks.filter(book => {
         const matchName = book.name.toLowerCase().includes(searchName);
-        const matchBookId = book.id.toLowerCase().includes(searchBookId);
+        const matchBookId = book.id.toString().toLowerCase().includes(searchBookId);
         const matchAuthor = book.author.toLowerCase().includes(searchAuthor);
         const matchKeywords = book.keywords.toLowerCase().includes(searchKeywords);
         const matchPrice = book.price >= minPrice && book.price <= maxPrice;
-        const matchCategory = selectedCategories.length === 0 || selectedCategories.includes(book.category);
+        
+        // Check if book has any of the selected categories
+        let matchCategory = selectedCategories.length === 0;
+        if (!matchCategory && book.categories && book.categories.length > 0) {
+            matchCategory = book.categories.some(cat => selectedCategories.includes(cat.name));
+        }
 
         return matchName && matchBookId && matchAuthor && matchKeywords && matchPrice && matchCategory;
     });
@@ -224,33 +255,28 @@ function createBookElement(book) {
     bookItem.className = 'book-item';
     
     const isWishlisted = state.wishlist.includes(book.id);
-    const discountPercent = Math.round(((book.originalPrice - book.price) / book.originalPrice) * 100);
+    
+    // Build category badges from array
+    const categoryBadges = book.categories && book.categories.length > 0 
+        ? book.categories.map(cat => `<span class="category-badge">${cat.name}</span>`).join('')
+        : '<span class="category-badge">Khác</span>';
     
     bookItem.innerHTML = `
         <div class="book-cover">
-            <i class="bi bi-book"></i>
-            ${book.originalPrice > book.price ? `<span class="book-badge">-${discountPercent}%</span>` : ''}
+            <img src="${book.image_url ? '../' + book.image_url : '../images/pages/sample-book.png'}" alt="${book.name}" onerror="this.src='../images/pages/sample-book.png'">
         </div>
         <div class="book-info">
             <h3 class="book-title">${book.name}</h3>
             <p class="book-author"><i class="bi bi-person"></i> ${book.author}</p>
             <div class="book-category">
-                <span class="category-badge">${getCategoryName(book.category)}</span>
-            </div>
-            <div class="book-rating">
-                <i class="bi bi-star-fill"></i>
-                <span>${book.rating} (${book.reviews} đánh giá)</span>
+                ${categoryBadges}
             </div>
             <p class="book-description">${book.description}</p>
             <div class="book-footer">
                 <div>
                     <span class="book-price">${formatPrice(book.price)}đ</span>
-                    ${book.originalPrice > book.price ? `<span class="book-original-price">${formatPrice(book.originalPrice)}đ</span>` : ''}
                 </div>
                 <div class="book-actions">
-                    <button class="btn-wishlist ${isWishlisted ? 'active' : ''}" data-book-id="${book.id}" title="Thêm vào yêu thích">
-                        <i class="bi bi-heart${isWishlisted ? '-fill' : ''}"></i>
-                    </button>
                     <button class="btn-add-to-cart" data-book-id="${book.id}">
                         <i class="bi bi-cart-plus"></i> Giỏ
                     </button>
@@ -258,13 +284,6 @@ function createBookElement(book) {
             </div>
         </div>
     `;
-    
-    // Event listeners
-    const wishlistBtn = bookItem.querySelector('.btn-wishlist');
-    wishlistBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleWishlist(book.id, wishlistBtn);
-    });
     
     const addToCartBtn = bookItem.querySelector('.btn-add-to-cart');
     addToCartBtn.addEventListener('click', (e) => {
@@ -303,7 +322,7 @@ function toggleWishlist(bookId, btn) {
 }
 
 // Add to Cart
-function addToCart(book) {
+async function addToCart(book) {
     // Kiểm tra xem user đã đăng nhập chưa
     const currentUser = localStorage.getItem('currentUser');
     if (!currentUser) {
@@ -314,24 +333,17 @@ function addToCart(book) {
         return;
     }
     
-    let cart = JSON.parse(localStorage.getItem('cart')) || [];
-    
-    const existingItem = cart.find(item => item.id === book.id);
-    
-    if (existingItem) {
-        existingItem.quantity += 1;
-    } else {
-        cart.push({
-            id: book.id,
-            name: book.name,
-            author: book.author,
-            price: book.price,
-            quantity: 1
+    try {
+        const response = await fetchAPI(`${API_BASE}/cart`, {
+            method: 'POST',
+            body: JSON.stringify({ book_id: book.id, quantity: 1 })
         });
+        showNotification('Đã thêm vào giỏ hàng!');
+        // Update cart badge realtime - instant without page reload
+        updateCartBadgeFromAPI();
+    } catch (error) {
+        showNotification('Lỗi thêm vào giỏ hàng', 'error');
     }
-    
-    localStorage.setItem('cart', JSON.stringify(cart));
-    showNotification('Đã thêm vào giỏ hàng!');
 }
 
 // Pagination
@@ -434,20 +446,6 @@ function scrollToBooks() {
 }
 
 // Utility Functions
-function getCategoryName(category) {
-    const categoryMap = {
-        'fiction': 'Tiểu Thuyết',
-        'education': 'Giáo Dục',
-        'technology': 'Công Nghệ',
-        'history': 'Lịch Sử',
-        'business': 'Kinh Doanh',
-        'self-help': 'Kỹ Năng Sống',
-        'art': 'Nghệ Thuật',
-        'children': 'Trẻ Em'
-    };
-    return categoryMap[category] || category;
-}
-
 function formatPrice(price) {
     return new Intl.NumberFormat('vi-VN').format(price);
 }

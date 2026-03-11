@@ -1,0 +1,267 @@
+/* Admin User Management Styles */
+
+/* Role Badges */
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.role-customer {
+  background: #ECFDF5;
+  color: #059669;
+  border: 1px solid #A7F3D0;
+  box-shadow: 0 1px 3px rgba(16, 185, 129, 0.1);
+}
+
+.role-admin {
+  background: #EEF2FF;
+  color: #4F46E5;
+  border: 1px solid #C7D2FE;
+  box-shadow: 0 1px 3px rgba(79, 70, 229, 0.1);
+}
+
+/* Form Groups in Modal */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0F172A;
+  margin-bottom: 8px;
+}
+
+.form-group .required {
+  color: #EF4444;
+  margin-left: 2px;
+}
+
+.form-group .input,
+.form-group select {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 14px;
+  border: 1px solid #E2E8F0;
+  border-radius: 8px;
+  color: #0F172A;
+  background: #FFFFFF;
+  transition: all 0.2s ease;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.form-group .input:focus,
+.form-group select:focus {
+  border-color: #4F46E5;
+  outline: none;
+  box-shadow: 0 0 0 3px #EEF2FF;
+  background: #FFFFFF;
+}
+
+.form-group .input:disabled {
+  background-color: #F8FAFC;
+  color: #64748B;
+  cursor: not-allowed;
+  border-color: #E2E8F0;
+}
+
+.form-group .input::placeholder {
+  color: #94A3B8;
+}
+
+/* Modal Actions */
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 28px;
+}
+
+.modal-actions .btn {
+  min-width: 100px;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid #E2E8F0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-actions .btn-secondary {
+  background: #F1F5F9;
+  color: #64748B;
+  border-color: #E2E8F0;
+}
+
+.modal-actions .btn-secondary:hover {
+  background: #E2E8F0;
+  border-color: #CBD5E1;
+  color: #475569;
+}
+
+.modal-actions .btn-primary {
+  background: #4F46E5;
+  color: #FFFFFF;
+  border-color: #4F46E5;
+  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.15);
+}
+
+.modal-actions .btn-primary:hover {
+  background: #4338CA;
+  border-color: #4338CA;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+  transform: translateY(-1px);
+}
+
+/* Table styling enhancements */
+.table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.table tbody tr:hover {
+  background-color: #F8FAFC;
+}
+
+.table td:has(.role-badge) {
+  text-align: center;
+}
+
+/* Create/Edit Modal Styling */
+#createUserModal .modal-content,
+#editUserModal .modal-content {
+  animation: slideUpIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUpIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .custom-modal .modal-content {
+    width: 90%;
+    max-width: 100%;
+    padding: 24px;
+  }
+
+  .modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .modal-actions .btn {
+    width: 100%;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .role-badge {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+}
+
+/* Table responsive adjustments */
+@media (max-width: 1024px) {
+  .table th,
+  .table td {
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+
+  .role-badge {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+}
+
+/* Action buttons in table */
+.btn-link {
+  padding: 6px 8px;
+  background: transparent;
+  border: none;
+  color: #64748B;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s ease;
+}
+
+.btn-link:hover {
+  color: #0F172A;
+  background: transparent;
+}
+
+.btn-link.btn-delete:hover {
+  color: #EF4444;
+}
+
+.btn-link.btn-edit:hover {
+  color: #4F46E5;
+}
+
+/* Loading and empty states */
+.table tbody tr td {
+  text-align: left;
+}
+
+.table tbody tr td:first-child {
+  color: #64748B;
+  font-weight: 500;
+}
+
+/* Input validation states */
+.input:invalid {
+  border-color: #EF4444;
+}
+
+.input:valid {
+  border-color: #E2E8F0;
+}
+
+/* Select dropdown styling */
+select.input {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234F46E5' d='M1 4l5 4 5-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+}
+
+select.input:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234F46E5' d='M1 4l5 4 5-4'/%3E%3C/svg%3E");
+}
+
+/* Form feedback */
+.form-error {
+  color: #EF4444;
+  font-size: 12px;
+  margin-top: 4px;
+  display: none;
+}
+
+.form-group.error .input,
+.form-group.error select {
+  border-color: #EF4444;
+}
+
+.form-group.error .form-error {
+  display: block;
+}

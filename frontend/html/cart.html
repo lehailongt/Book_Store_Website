@@ -20,13 +20,7 @@
                 <h2><i class="bi bi-book"></i> BookStore</h2>
             </div>
             <div class="nav-menu">
-                <ul>
-                    <li><a href="./home.html"><i class="bi bi-house"></i> Trang Chủ</a></li>
-                    <li><a href="./book.html"><i class="bi bi-book"></i> Sách</a></li>
-                    <li><a href="./cart.html" class="cart-nav-link"><i class="bi bi-cart"></i> Giỏ Hàng <span
-                                id="cartBadge" class="cart-badge" style="display:none;">0</span></a></li>
-                    <li><a href="./login.html"><i class="bi bi-person"></i> Đăng Nhập</a></li>
-                </ul>
+                <!-- Injected via header.js -->
             </div>
         </nav>
     </header>
@@ -34,44 +28,49 @@
     <main class="cart-main">
         <div class="cart-container">
             <h1>Giỏ Hàng</h1>
-            <div class="cart-table-wrapper">
-                <table class="cart-table">
-                    <thead>
-                        <tr>
-                            <th>Book ID</th>
-                            <th>Số lượng</th>
-                            <th>Giá</th>
-                            <th>Tổng</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody id="cartBody">
-                        <!-- items injected -->
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="cart-summary">
-                <div class="summary-box">
-                    <h3>Thông Tin Giao Hàng</h3>
-                    <div class="form-group">
-                        <label for="shipAddress">Nơi nhận hàng</label>
-                        <input type="text" id="shipAddress" class="form-control">
+            
+            <div class="cart-wrapper">
+                <div class="cart-table-section">
+                    <div class="cart-table-wrapper">
+                        <table class="cart-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-id">Mã Sách</th>
+                                    <th class="col-image">Ảnh</th>
+                                    <th class="col-name">Tên Sách</th>
+                                    <th class="col-author">Tác Giả</th>
+                                    <th class="col-qty">Số Lượng</th>
+                                    <th class="col-price">Giá</th>
+                                    <th class="col-total">Tổng</th>
+                                    <th class="col-action">Thao Tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="cartBody">
+                                <!-- items injected -->
+                            </tbody>
+                        </table>
                     </div>
-                    <h3>Phương thức thanh toán</h3>
-                    <div class="form-group payment-methods">
-                        <label><input type="radio" name="payment" value="cod" checked> Thanh toán khi nhận
-                            hàng</label><br>
-                        <label><input type="radio" name="payment" value="card"> Thẻ tín dụng</label><br>
-                        <label><input type="radio" name="payment" value="paypal"> PayPal</label>
-                    </div>
+                    <div class="cart-pagination" id="cartPagination"></div>
                 </div>
 
-                <div class="summary-box summary-right">
-                    <h3>Tóm Tắt Đơn Hàng</h3>
-                    <p class="total-line">Tổng cộng: <span id="totalAmount">0đ</span></p>
-                    <button id="checkoutBtn" class="btn btn-primary btn-block">THANH TOÁN</button>
-                    <a href="./book.html" class="continue-link">Tiếp tục mua sắm</a>
+                <div class="cart-sidebar">
+                    <div class="summary-card">
+                        <h3>Thông Tin Giao Hàng</h3>
+                        <div class="form-group">
+                            <label for="shipAddress">Địa chỉ nhận hàng</label>
+                            <input type="text" id="shipAddress" class="form-control" placeholder="Nhập địa chỉ...">
+                        </div>
+                    </div>
+
+                    <div class="summary-card">
+                        <h3>Tóm Tắt Đơn Hàng</h3>
+                        <div class="summary-line">
+                            <span>Tổng cộng:</span>
+                            <span id="totalAmount" class="amount">0đ</span>
+                        </div>
+                        <button id="checkoutBtn" class="btn-checkout">THANH TOÁN</button>
+                        <a href="./book.html" class="link-continue">← Tiếp tục mua sắm</a>
+                    </div>
                 </div>
             </div>
         </div>

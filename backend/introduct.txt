@@ -4,3 +4,4 @@ bcrypt
 mysql2
 dotenv
 -D nodemon
+multer

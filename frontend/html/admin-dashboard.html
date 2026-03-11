@@ -44,36 +44,52 @@
       <div class="content">
         <div class="cards">
           <div class="card stat">
-            <h3>Tổng đơn hàng</h3>
-            <div class="value">1,284</div>
-          </div>
-          <div class="card stat">
             <h3>Doanh thu</h3>
-            <div class="value">₫ 128,400,000</div>
+            <div class="value" id="m-revenue">₫ 0</div>
           </div>
           <div class="card stat">
-            <h3>Khách hàng mới</h3>
-            <div class="value">312</div>
+            <h3>Số người dùng</h3>
+            <div class="value" id="m-total-users">0</div>
           </div>
           <div class="card stat">
-            <h3>Sách đang bán</h3>
-            <div class="value">984</div>
+            <h3>Số sách</h3>
+            <div class="value" id="m-total-books">0</div>
+          </div>
+          <div class="card stat">
+            <h3>Sách đã bán</h3>
+            <div class="value" id="m-total-books-sold">0</div>
           </div>
         </div>
 
-        <!-- Chart Block -->
-        <div class="chart-container"
-          style="background: var(--surface); padding: 24px; border-radius: var(--radius-xl); margin-bottom: 32px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color);">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-            <h3 style="margin: 0; color: #1f2937;">Biểu đồ doanh thu</h3>
-            <select id="revenueFilter" class="input" style="width: auto;">
-              <option value="day">Theo Ngày (Hôm nay)</option>
-              <option value="week" selected>Theo Tuần</option>
-              <option value="month">Theo Tháng</option>
-            </select>
+        <!-- Charts -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px;">
+          <!-- Pie Chart: Order Status -->
+          <div class="chart-container"
+            style="background: var(--surface); padding: 24px; border-radius: var(--radius-xl); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color);">
+            <h3 style="margin: 0 0 24px 0; color: #1f2937;">Trạng thái đơn hàng</h3>
+            <div style="position: relative; height: 300px; width: 100%;">
+              <canvas id="orderStatusChart"></canvas>
+              <div id="orderCountDisplay" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; display: none;">
+                <div style="font-size: 32px; font-weight: bold; color: #1f2937;" id="orderCount">0</div>
+                <div style="font-size: 12px; color: #6b7280;">Tổng đơn hàng</div>
+              </div>            </div>
           </div>
-          <div style="position: relative; height: 300px; width: 100%;">
-            <canvas id="revenueChart"></canvas>
+
+          <!-- Line Chart: Monthly Revenue -->
+          <div class="chart-container"
+            style="background: var(--surface); padding: 24px; border-radius: var(--radius-xl); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+              <h3 style="margin: 0; color: #1f2937;">Doanh thu theo tháng</h3>
+              <select id="yearFilter" class="input" style="width: auto;">
+                <option value="2023" selected>2023</option>
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+              </select>
+            </div>
+            <div style="position: relative; height: 300px; width: 100%;">
+              <canvas id="monthlyRevenueChart"></canvas>
+            </div>
           </div>
         </div>
 

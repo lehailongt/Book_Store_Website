@@ -105,6 +105,53 @@ function renderHeader() {
     }
 }
 
+// Update cart badge from API
+async function updateCartBadgeFromAPI() {
+    try {
+        const token = localStorage.getItem('accessToken') || localStorage.getItem('token') || '';
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const response = await fetch('http://localhost:5001/api/cart/count', { headers });
+        if (response.ok) {
+            const data = await response.json();
+            const count = data.data || 0;
+            const badge = document.getElementById('cartBadge');
+            if (badge) {
+                badge.textContent = count;
+                badge.style.display = count > 0 ? 'inline-block' : 'none';
+            }
+        }
+    } catch (e) {
+        console.error('Error updating cart badge:', e);
+    }
+}
+
+// Fallback: Monitor localStorage cart changes
+function monitorCartChanges() {
+    const originalSetItem = localStorage.setItem;
+    localStorage.setItem = function(key, value) {
+        originalSetItem.call(this, key, value);
+        if (key === 'cart') {
+            updateCartBadgeFromAPI();
+        }
+    };
+}
+
+// Initial cart badge update
+function updateCartBadge() {
+    updateCartBadgeFromAPI();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     renderHeader();
+    monitorCartChanges();
+    // Initial badge update
+    setTimeout(() => {
+        updateCartBadgeFromAPI();
+    }, 100);
 });

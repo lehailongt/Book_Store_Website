@@ -182,3 +182,23 @@ export const deleteBook = async (request, response) => {
         });
     }
 };
+
+// Lấy sách phổ biến (top selling)
+export const getPopularBooks = async (request, response) => {
+    try {
+        const { limit = 10 } = request.query;
+        const books = await BookModel.getPopularBooks(parseInt(limit));
+        response.status(200).json({
+            success: true,
+            message: 'Lấy sách phổ biến thành công',
+            data: books
+        });
+    } catch (error) {
+        console.error('Error in getPopularBooks:', error);
+        response.status(500).json({
+            success: false,
+            message: 'Lỗi khi lấy sách phổ biến',
+            error: error.message
+        });
+    }
+};

@@ -3,9 +3,9 @@ use book_store;
 -- 1. Thêm dữ liệu vào bảng users (3 admin + 25 customer)
 INSERT INTO users (full_name, date_of_birth, email, phone_number, password, image_url, role) VALUES
 -- Admin (3 người) - IDs: 1-3
-('Admin Nguyễn Văn A', '1985-01-15', 'admin1@gmail.com', '0901111111', 'admin123', 'images/pages/anonymous.png', 'admin'),
-('Admin Trần Thị B', '1988-03-20', 'admin2@gmail.com', '0902222222', 'admin123', 'images/pages/anonymous.png', 'admin'),
-('Admin Lê Văn C', '1990-07-10', 'admin3@gmail.com', '0903333333', 'admin123', 'images/pages/anonymous.png', 'admin'),
+('Admin Nguyễn Văn A', '1985-01-15', 'admin1@gmail.com', '0901111111', 'admin123', 'images/pages/admin.png', 'admin'),
+('Admin Trần Thị B', '1988-03-20', 'admin2@gmail.com', '0902222222', 'admin123', 'images/pages/admin.png', 'admin'),
+('Admin Lê Văn C', '1990-07-10', 'admin3@gmail.com', '0903333333', 'admin123', 'images/pages/admin.png', 'admin'),
 
 -- Customer (25 người) - IDs: 4-28
 -- Khách không đặt đơn hàng (3 người) - IDs: 4,5,6

@@ -145,6 +145,7 @@
       status: '', // 'active' | 'locked' | ''
     },
     rows: [],
+    allRows: [],
   };
 
   //=========================
@@ -154,6 +155,7 @@
 
   function cacheElements() {
     els.keyword = document.getElementById('keyword');
+    els.pageSize = document.getElementById('page-size');
     els.role = document.getElementById('role');
     els.status = document.getElementById('status');
     els.btnSearch = document.getElementById('btn-search');
@@ -168,8 +170,32 @@
       els.detailName = document.getElementById('eu-fullname');
       els.detailEmail = document.getElementById('eu-email');
       els.detailPhone = document.getElementById('eu-phone');
+      els.detailDate = document.getElementById('eu-date');
       els.detailRole = document.getElementById('eu-role');
     }
+
+    if (els.pageSize) {
+      els.pageSize.value = '10';
+      state.limit = 10;
+    }
+  }
+
+  function getSelectedPageSize(totalRows = 0) {
+    const selected = (els.pageSize && els.pageSize.value) || '10';
+    if (selected === 'all') {
+      return Math.max(1, Number(totalRows) || 1);
+    }
+    const n = Number(selected);
+    return Number.isFinite(n) && n > 0 ? n : PAGE_SIZE_DEFAULT;
+  }
+
+  function renderCurrentView() {
+    state.limit = getSelectedPageSize(state.allRows.length);
+    state.total = state.allRows.length;
+    const start = (state.page - 1) * state.limit;
+    state.rows = state.allRows.slice(start, start + state.limit);
+    renderRows();
+    renderPagination();
   }
 
   //=========================
@@ -208,17 +234,12 @@
         const idx = indexOffset + i + 1;
         const name = escapeHtml(u.name || u.fullName || u.username || '');
         const email = escapeHtml(u.email || '');
-        const role = escapeHtml(u.role || 'user');
-
-        const isCustomer = role === 'user' || role === 'customer';
-        const isAdmin = role === 'admin';
-
-        const roleSelectHtml = `
-          <select class="input role-select" data-id="${escapeHtml(u.id || u._id || '')}" style="padding: 3px 6px; font-size: 13px; border-radius: 4px; border: 1px solid #d1d5db; outline: none; background: #fff; cursor: pointer;">
-            <option value="customer" ${isCustomer ? 'selected' : ''}>Customer</option>
-            <option value="admin" ${isAdmin ? 'selected' : ''}>Admin</option>
-          </select>
-        `;
+        const roleValue = escapeHtml(u.role || 'customer');
+        
+        // Hiển thị vai trò dưới dạng badge (chỉ 2 loại: customer hoặc admin)
+        let roleLabel = roleValue === 'admin' ? 'Admin' : 'Customer';
+        let roleBadgeClass = roleValue === 'admin' ? 'role-badge role-admin' : 'role-badge role-customer';
+        let roleBadgeHtml = `<span class="${roleBadgeClass}">${roleLabel}</span>`;
 
         return `
           <tr data-id="${escapeHtml(u.id || u._id || '')}">
@@ -227,7 +248,7 @@
             <td>${name}</td>
             <td>${email}</td>
             <td>${escapeHtml(u.phone_number || '')}</td>
-            <td>${roleSelectHtml}</td>
+            <td>${roleBadgeHtml}</td>
             <td>
               <button class="btn btn-link btn-edit" title="Chỉnh sửa người dùng"><i class="bi bi-pencil-square"></i></button>
               <button class="btn btn-link btn-delete" title="Xóa người dùng" style="color: #ef4444;"><i class="bi bi-trash3"></i></button>
@@ -287,67 +308,21 @@
     els.detailName.value = user.name || user.full_name || user.fullName || '';
     els.detailEmail.value = user.email || '';
     els.detailPhone.value = user.phone_number || '';
-
-    // map DB to UI options 
-    const isCustomer = user.role === 'customer' || user.role === 'user';
-    els.detailRole.value = isCustomer ? 'customer' : 'admin';
-  }
-
-  // Hiển thị modal chỉnh sửa và điền thông tin
-  function showEditUserModal(user) {
-    const modal = document.getElementById('edit-user-modal');
-    const form = document.getElementById('edit-user-form');
-    if (!modal || !form) return;
-
-    // Điền thông tin
-    form.full_name.value = user.full_name || '';
-    form.email.value = user.email || '';
-    form.phone_number.value = user.phone_number || '';
-    form.date_of_birth.value = user.date_of_birth ? user.date_of_birth.split('T')[0] : '';
-    form.password.value = '';
-    form.role.value = user.role || 'customer';
-    form.dataset.id = user.user_id || user.id || '';
-
-    modal.classList.remove('hidden');
-  }
-
-  // Đóng modal chỉnh sửa
-  function closeEditUserModal() {
-    const modal = document.getElementById('edit-user-modal');
-    if (modal) modal.classList.add('hidden');
-  }
-
-  // Gắn sự kiện cho nút đóng modal
-  document.getElementById('close-edit-modal')?.addEventListener('click', closeEditUserModal);
-
-  // Gắn sự kiện submit form chỉnh sửa
-  document.getElementById('edit-user-form')?.addEventListener('submit', async function(e) {
-    e.preventDefault();
-    const form = e.target;
-    const userId = form.dataset.id;
-    const userData = {
-      full_name: form.full_name.value,
-      email: form.email.value,
-      phone_number: form.phone_number.value,
-      date_of_birth: form.date_of_birth.value,
-      password: form.password.value,
-      role: form.role.value
-    };
-    await updateUser(userId, userData);
-    closeEditUserModal();
-    // Sau khi cập nhật, reload lại danh sách
-    loadUsers();
-  });
-
-  // Gắn sự kiện cho nút chỉnh sửa
-  document.querySelector('.table-wrap')?.addEventListener('click', function(e) {
-    if (e.target.closest('.btn-edit')) {
-      const tr = e.target.closest('tr');
-      const userId = tr?.getAttribute('data-id');
-      const user = state.rows.find(u => String(u.id || u.user_id) === String(userId));
-      if (user) showEditUserModal(user);
+    if (els.detailDate) {
+      els.detailDate.value = user.date_of_birth ? String(user.date_of_birth).split('T')[0] : '';
     }
-  });
+
+    // Vai trò chỉ có 2 loại: admin hoặc customer (default)
+    els.detailRole.value = user.role === 'admin' ? 'admin' : 'customer';
+  }
+
+  // Display edit modal with user data
+  function openModal() {
+    const modal = document.getElementById('editUserModal');
+    if (modal) modal.style.display = 'flex';
+  }
+
+
 
   //=========================
   // Data loading
@@ -364,8 +339,8 @@
     if (state.filters.keyword) params.set('keyword', state.filters.keyword.trim());
     if (state.filters.role) params.set('role', state.filters.role);
     if (state.filters.status) params.set('status', state.filters.status);
-    params.set('page', String(state.page));
-    params.set('limit', String(state.limit));
+    params.set('page', '1');
+    params.set('limit', '1000');
 
     try {
       const data = await fetchAdmin(`/users?${params.toString()}`, {
@@ -387,11 +362,9 @@
         if (data.limit) state.limit = Number(data.limit) || state.limit;
       }
 
-      state.rows = rows;
+      state.allRows = rows;
       state.total = total;
-
-      renderRows();
-      renderPagination();
+      renderCurrentView();
     } catch (err) {
       console.error(err);
       showToast(err.message || 'Tải danh sách người dùng thất bại', 'error');
@@ -494,8 +467,8 @@
       els.btnSearch.addEventListener('click', () => {
         state.page = 1;
         state.filters.keyword = (els.keyword.value || '').trim();
-        state.filters.role = els.role.value || '';
-        state.filters.status = els.status.value || '';
+        state.filters.role = (els.role && els.role.value) || '';
+        state.filters.status = (els.status && els.status.value) || '';
         loadUsers({ page: 1 });
       });
     }
@@ -544,7 +517,16 @@
         if (!btn) return;
         const page = Number(btn.getAttribute('data-page')) || 1;
         if (page === state.page) return;
-        loadUsers({ page });
+        state.page = page;
+        renderCurrentView();
+      });
+    }
+
+    if (els.pageSize) {
+      els.pageSize.addEventListener('change', () => {
+        state.page = 1;
+        state.limit = getSelectedPageSize(state.allRows.length);
+        renderCurrentView();
       });
     }
 
@@ -593,13 +575,25 @@
     if (createUserForm) {
       createUserForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const body = {
-          fullName: document.getElementById('cu-fullname').value,
-          email: document.getElementById('cu-email').value,
-          phone_number: document.getElementById('cu-phone').value,
-          password: document.getElementById('cu-password').value,
-          role: document.getElementById('cu-role').value
-        };
+
+        const fullName = document.getElementById('cu-fullname').value.trim();
+        const email = document.getElementById('cu-email').value.trim();
+        const phone = document.getElementById('cu-phone').value.trim();
+        const dateOfBirth = document.getElementById('cu-date').value.trim();
+        const password = document.getElementById('cu-password').value;
+        const role = document.getElementById('cu-role').value;
+
+        if (!fullName) { alert('Họ và tên không được để trống.'); return; }
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('Email không hợp lệ.'); return; }
+        if (phone && !/^[0-9]{9,11}$/.test(phone)) { alert('Số điện thoại không hợp lệ (9-11 chữ số).'); return; }
+        if (!password || password.length < 6) { alert('Mật khẩu phải có ít nhất 6 ký tự.'); return; }
+        if (!role) { alert('Vui lòng chọn vai trò.'); return; }
+
+        const body = { fullName, email, phone_number: phone, password, role };
+        if (dateOfBirth) {
+          body.date_of_birth = dateOfBirth;
+        }
+
         try {
           await fetchAdmin('/users', { method: 'POST', body: JSON.stringify(body) });
           showToast('Thêm người dùng thành công', 'info');
@@ -616,26 +610,46 @@
     if (editUserForm) {
       editUserForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+
         const userId = document.getElementById('eu-id').value;
+        const fullName = document.getElementById('eu-fullname').value.trim();
+        const email = document.getElementById('eu-email').value.trim();
+        const phone = document.getElementById('eu-phone').value.trim();
+        const role = document.getElementById('eu-role').value;
+
+        if (!fullName) { alert('Họ và tên không được để trống.'); return; }
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('Email không hợp lệ.'); return; }
+        if (phone && !/^[0-9]{9,11}$/.test(phone)) { alert('Số điện thoại không hợp lệ (9-11 chữ số).'); return; }
+        if (!role) { alert('Vui lòng chọn vai trò.'); return; }
+
         const body = {
-          fullName: document.getElementById('eu-fullname').value,
-          email: document.getElementById('eu-email').value,
-          phone_number: document.getElementById('eu-phone').value,
-          role: document.getElementById('eu-role').value
+          fullName,
+          email,
+          phone_number: phone,
+          role
         };
+
+        // Thêm ngày sinh nếu có giá trị
+        const dateInput = document.getElementById('eu-date');
+        if (dateInput && dateInput.value) {
+          body.date_of_birth = dateInput.value;
+        }
+
         try {
           await fetchAdmin(`/users/${encodeURIComponent(userId)}`, {
             method: 'PUT',
             body: JSON.stringify(body)
           });
           showToast('Cập nhật người dùng thành công', 'info');
-          closeModal();
+          const modal = document.getElementById('editUserModal');
+          if (modal) modal.style.display = 'none';
           loadUsers({ page: state.page });
         } catch (err) {
-          alert(err.message || 'Lỗi cập nhật người dùng');
+          showToast(err.message || 'Lỗi cập nhật người dùng', 'error');
         }
       });
     }
+
   }
 
   //=========================

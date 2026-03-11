@@ -52,7 +52,7 @@ class UserController {
                 return res.status(400).json({ message: 'Email không đúng' });
             }
             // const ok = await bcrypt.compare(password, user.password);
-            const ok = password === user.password; // For demo only. Use bcrypt in production.
+            const ok = password === user.password;
             if (!ok) {
                 return res.status(400).json({ message: 'Mật khẩu không đúng' });
             }

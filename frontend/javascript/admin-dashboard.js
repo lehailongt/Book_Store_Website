@@ -33,14 +33,22 @@
     try {
       const m = await fetchAdmin('/metrics');
       const formatMoney = (v) => `₫ ${Number(v || 0).toLocaleString('vi-VN')}`;
-      const cards = [
-        { el: '#m-total-orders', val: (m.totalOrders || 0).toLocaleString('vi-VN') },
-        { el: '#m-revenue', val: formatMoney(m.revenue) },
-        { el: '#m-new-customers', val: (m.newCustomers || 0).toLocaleString('vi-VN') },
-        { el: '#m-total-books', val: (m.totalBooks || 0).toLocaleString('vi-VN') },
-      ];
-      cards.forEach(c => { const e = $(c.el); if (e) e.textContent = c.val; });
-    } catch (err) { console.error(err); }
+      
+      // Update cards
+      const card_revenue = $('#m-revenue');
+      const card_users = $('#m-total-users');
+      const card_books = $('#m-total-books');
+      const card_sold = $('#m-total-books-sold');
+      
+      if (card_revenue) card_revenue.textContent = formatMoney(m.revenue);
+      if (card_users) card_users.textContent = (m.totalUsers || 0).toLocaleString('vi-VN');
+      if (card_books) card_books.textContent = (m.totalBooks || 0).toLocaleString('vi-VN');
+      if (card_sold) card_sold.textContent = (m.totalBooksSold || 0).toLocaleString('vi-VN');
+      
+      // Store totalOrders for pie chart
+      window.totalOrdersCount = m.totalOrders || 0;
+      return m;
+    } catch (err) { console.error(err); return null; }
   }
 
   function escapeHtml(str) {
@@ -60,46 +68,35 @@
     }
   }
 
-  let revenueChartInstance = null;
-  async function loadRevenueChart(filter) {
+  let orderStatusChartInstance = null;
+  async function loadOrderStatusChart() {
     try {
-      // Logic for fetching API:
-      // const data = await fetchAdmin(`/metrics/revenue?filter=${filter}`);
+      const data = await fetchAdmin('/order-status');
 
-      const ctx = document.getElementById('revenueChart');
+      const ctx = document.getElementById('orderStatusChart');
       if (!ctx) return;
 
-      let labels = [];
-      let amounts = [];
-
-      // Generate mock data based on filter
-      if (filter === 'day') {
-        labels = ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'];
-        amounts = [120, 300, 450, 700, 500, 200];
-      } else if (filter === 'week') {
-        labels = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
-        amounts = [1500, 2300, 1800, 3200, 2800, 4000, 5100];
-      } else if (filter === 'month') {
-        labels = ['Tuần 1', 'Tuần 2', 'Tuần 3', 'Tuần 4'];
-        amounts = [12000, 15000, 14000, 21000];
+      if (orderStatusChartInstance) {
+        orderStatusChartInstance.destroy();
       }
 
-      if (revenueChartInstance) {
-        revenueChartInstance.destroy();
+      // Display center text
+      const countDisplay = document.getElementById('orderCountDisplay');
+      const countText = document.getElementById('orderCount');
+      if (countDisplay && countText) {
+        countText.textContent = (window.totalOrdersCount || 0).toLocaleString('vi-VN');
+        countDisplay.style.display = 'block';
       }
 
-      revenueChartInstance = new Chart(ctx, {
-        type: 'line',
+      orderStatusChartInstance = new Chart(ctx, {
+        type: 'doughnut',
         data: {
-          labels: labels,
+          labels: data.labels || [],
           datasets: [{
-            label: 'Doanh thu (Nghìn VNĐ)',
-            data: amounts,
-            borderColor: '#1e3a8a',
-            backgroundColor: 'rgba(30, 58, 138, 0.1)',
+            data: data.data || [],
+            backgroundColor: data.colors || ['#10b981', '#f59e0b', '#ef4444'],
+            borderColor: '#fff',
             borderWidth: 2,
-            tension: 0.3,
-            fill: true
           }]
         },
         options: {
@@ -107,31 +104,91 @@
           maintainAspectRatio: false,
           plugins: {
             legend: {
-              display: false
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: true
+              position: 'bottom',
+              labels: {
+                padding: 15,
+                font: { size: 14 }
+              }
             }
           }
         }
       });
 
     } catch (error) {
-      console.error('Error loading chart: ', error);
+      console.error('Error loading order status chart: ', error);
     }
   }
 
-  function init() {
-    if (!ensureAdmin()) return;
-    loadMetrics();
+  let monthlyRevenueChartInstance = null;
+  async function loadMonthlyRevenueChart(year) {
+    try {
+      const data = await fetchAdmin(`/revenue-by-month?year=${year}`);
 
-    const chartFilter = document.getElementById('revenueFilter');
-    if (chartFilter) {
-      loadRevenueChart(chartFilter.value);
-      chartFilter.addEventListener('change', (e) => {
-        loadRevenueChart(e.target.value);
+      const ctx = document.getElementById('monthlyRevenueChart');
+      if (!ctx) return;
+
+      if (monthlyRevenueChartInstance) {
+        monthlyRevenueChartInstance.destroy();
+      }
+
+      monthlyRevenueChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: data.labels || [],
+          datasets: [{
+            label: `Doanh thu năm ${year} (₫)`,
+            data: data.data || [],
+            backgroundColor: '#3b82f6',
+            borderColor: '#1e40af',
+            borderWidth: 1,
+            borderRadius: 4,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top'
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: (value) => new Intl.NumberFormat('vi-VN').format(value)
+              }
+            }
+          }
+        }
+      });
+
+    } catch (error) {
+      console.error('Error loading monthly revenue chart: ', error);
+    }
+  }
+
+  async function init() {
+    if (!ensureAdmin()) return;
+    
+    // Load metrics first (this sets window.totalOrdersCount)
+    await loadMetrics();
+    
+    // Then load charts that depend on totalOrdersCount
+    await loadOrderStatusChart();
+    
+    // const currentYear = new Date().getFullYear();
+    const currentYear = 2023;
+    const yearFilter = document.getElementById('yearFilter');
+    if (yearFilter) {
+      yearFilter.value = String(currentYear);
+    }
+    await loadMonthlyRevenueChart(currentYear);
+
+    if (yearFilter) {
+      yearFilter.addEventListener('change', (e) => {
+        loadMonthlyRevenueChart(e.target.value);
       });
     }
   }

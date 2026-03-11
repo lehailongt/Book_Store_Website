@@ -1,6 +1,33 @@
 // src/controllers/adminController.js
 import pool from '../config/database.js';
 import bcrypt from 'bcrypt';
+import multer from 'multer';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const BOOK_IMAGES_DIR = path.join(__dirname, '../../../frontend/images/books');
+
+const _bookImageStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    if (!fs.existsSync(BOOK_IMAGES_DIR)) fs.mkdirSync(BOOK_IMAGES_DIR, { recursive: true });
+    cb(null, BOOK_IMAGES_DIR);
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${req.params.id}.png`);
+  }
+});
+
+const _uploadBookImage = multer({
+  storage: _bookImageStorage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('Chỉ chấp nhận file ảnh'), false);
+  },
+  limits: { fileSize: 5 * 1024 * 1024 }
+}).single('image');
 
 // Helpers
 function toNumber(v, def = 0) {
@@ -143,7 +170,7 @@ export async function adminGetUserById(req, res) {
 export async function adminUpdateUser(req, res) {
   try {
     const id = req.params.id;
-    const { fullName, email, phone_number, role } = req.body;
+    const { fullName, email, phone_number, role, date_of_birth } = req.body;
 
     if (!fullName || !email) {
       return res.status(400).json({ message: 'Thiếu thông tin bắt buộc (họ tên, email)' });
@@ -152,8 +179,8 @@ export async function adminUpdateUser(req, res) {
     const dbRole = mapUiRoleToDb(role);
 
     const [result] = await pool.query(
-      'UPDATE users SET full_name = ?, email = ?, phone_number = ?, role = ? WHERE user_id = ?',
-      [fullName, email, phone_number || null, dbRole, id]
+      'UPDATE users SET full_name = ?, email = ?, phone_number = ?, role = ?, date_of_birth = ? WHERE user_id = ?',
+      [fullName, email, phone_number || null, dbRole, date_of_birth || null, id]
     );
 
     if (!result.affectedRows) {
@@ -214,15 +241,15 @@ export async function adminUpdateUserRole(req, res) {
 
 export async function adminCreateUser(req, res) {
   try {
-    const { fullName, email, password, role, phone_number } = req.body;
+    const { fullName, email, password, role, phone_number, date_of_birth } = req.body;
     if (!fullName || !email || !password) {
       return res.status(400).json({ message: 'Thiếu thông tin bắt buộc (họ tên, email, mật khẩu)' });
     }
     const dbRole = mapUiRoleToDb(role);
     const hashedPassword = await bcrypt.hash(password, 10);
     const [result] = await pool.query(
-      'INSERT INTO users (full_name, email, password, role, phone_number) VALUES (?, ?, ?, ?, ?)',
-      [fullName, email, hashedPassword, dbRole, phone_number || null]
+      'INSERT INTO users (full_name, email, password, role, phone_number, date_of_birth) VALUES (?, ?, ?, ?, ?, ?)',
+      [fullName, email, hashedPassword, dbRole, phone_number || null, date_of_birth || null]
     );
     res.status(201).json({ message: 'Thêm người dùng thành công', userId: result.insertId });
   } catch (err) {
@@ -231,6 +258,81 @@ export async function adminCreateUser(req, res) {
     }
     console.error(err);
     res.status(500).json({ message: 'Lỗi thêm người dùng' });
+  }
+}
+
+// Get all books for admin panel
+export async function adminGetBooks(req, res) {
+  try {
+    const page = toNumber(req.query.page, 1);
+    const limit = toNumber(req.query.limit, 100);
+    const offset = (page - 1) * limit;
+    const keyword = (req.query.keyword || '').trim();
+    const categoryFilter = (req.query.category || '').trim().toLowerCase();
+    const sortBy = (req.query.sortBy || 'book_id').toLowerCase(); // book_id, price, publish_date
+    const sortOrder = (req.query.sortOrder || 'ASC').toUpperCase(); // ASC or DESC
+
+    // Validate sort columns
+    const allowedSortColumns = ['book_id', 'price', 'publish_date', 'book_name', 'author_name'];
+    const finalSortBy = allowedSortColumns.includes(sortBy) ? sortBy : 'book_id';
+    const finalSortOrder = sortOrder === 'DESC' ? 'DESC' : 'ASC';
+
+    const where = [];
+    const params = [];
+
+    if (keyword) {
+      where.push('(b.book_name LIKE ? OR b.author_name LIKE ?)');
+      params.push(`%${keyword}%`, `%${keyword}%`);
+    }
+
+    let query = `
+      SELECT DISTINCT
+        b.book_id,
+        b.book_name AS name,
+        b.author_name AS author,
+        b.price,
+        b.description,
+        b.publish_date,
+        b.image_url,
+        GROUP_CONCAT(c.category_name SEPARATOR ', ') AS categories
+      FROM books b
+      LEFT JOIN bookcategories bc ON b.book_id = bc.book_id
+      LEFT JOIN categories c ON bc.category_id = c.category_id
+    `;
+
+    if (where.length > 0) {
+      query += ' WHERE ' + where.join(' AND ');
+    }
+
+    query += ` GROUP BY b.book_id ORDER BY b.${finalSortBy} ${finalSortOrder} LIMIT ? OFFSET ?`;
+    params.push(limit, offset);
+
+    const [rows] = await pool.query(query, params);
+
+    // Get total count
+    let countQuery = 'SELECT COUNT(DISTINCT b.book_id) AS total FROM books b';
+    if (where.length > 0) {
+      countQuery += ' WHERE ' + where.join(' AND ');
+    }
+    const [countResult] = await pool.query(countQuery, params.slice(0, -2));
+    const total = countResult[0]?.total || 0;
+
+    res.json({
+      data: rows,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit)
+      },
+      sort: {
+        sortBy: finalSortBy,
+        sortOrder: finalSortOrder
+      }
+    });
+  } catch (err) {
+    console.error('Error in adminGetBooks:', err);
+    res.status(500).json({ message: 'Lỗi tải danh sách sách', error: err.message });
   }
 }
 
@@ -328,6 +430,26 @@ export async function adminUpdateBook(req, res) {
     console.error(err);
     res.status(500).json({ message: 'Lỗi cập nhật sách' });
   }
+}
+
+export async function adminGetCategories(req, res) {
+  try {
+    const [rows] = await pool.query(
+      'SELECT category_id, category_name AS name FROM categories ORDER BY category_name ASC'
+    );
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Lỗi tải danh sách thể loại' });
+  }
+}
+
+export async function adminUploadBookImage(req, res) {
+  _uploadBookImage(req, res, (err) => {
+    if (err) return res.status(400).json({ message: err.message });
+    if (!req.file) return res.status(400).json({ message: 'Không có file ảnh' });
+    res.json({ imageUrl: `images/books/${req.params.id}.png` });
+  });
 }
 
 export async function adminDeleteBook(req, res) {
@@ -472,21 +594,106 @@ export async function adminUpdateOrderStatus(req, res) {
 // Metrics
 export async function adminGetMetrics(req, res) {
   try {
-    const [[{ totalOrders }]] = await pool.query('SELECT COUNT(*) AS totalOrders FROM orders');
-    const [[{ revenue }]] = await pool.query('SELECT COALESCE(SUM(total_amount),0) AS revenue FROM orders');
-    const [[{ newCustomers }]] = await pool.query(
-      `SELECT COUNT(*) AS newCustomers FROM users WHERE DATE(created_at) >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)`
-    ).catch(() => [[{ newCustomers: 0 }]]); // nếu không có cột created_at thì trả 0
+    // Total orders (delivered only)
+    const [[{ totalOrders }]] = await pool.query('SELECT COUNT(*) AS totalOrders FROM orders WHERE status = "delivered"');
+    
+    // Revenue (sum of delivered orders)
+    const [[{ revenue }]] = await pool.query('SELECT COALESCE(SUM(total_amount),0) AS revenue FROM orders WHERE status = "delivered"');
+    
+    // Total users
+    const [[{ totalUsers }]] = await pool.query('SELECT COUNT(*) AS totalUsers FROM users WHERE role = "customer"');
+    
+    // Total books in stock
     const [[{ totalBooks }]] = await pool.query('SELECT COUNT(*) AS totalBooks FROM books');
+    
+    // Total books sold (sum of quantities from orderdetails where order.status='delivered')
+    const [[{ totalBooksSold }]] = await pool.query(`
+      SELECT COALESCE(SUM(od.quantity), 0) AS totalBooksSold
+      FROM orderdetails od
+      JOIN orders o ON od.order_id = o.order_id
+      WHERE o.status = 'delivered'
+    `);
 
     res.json({
       totalOrders: Number(totalOrders || 0),
       revenue: Number(revenue || 0),
-      newCustomers: Number(newCustomers || 0),
+      totalUsers: Number(totalUsers || 0),
       totalBooks: Number(totalBooks || 0),
+      totalBooksSold: Number(totalBooksSold || 0),
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Lỗi lấy metrics dashboard' });
+  }
+}
+
+// Order status distribution (for pie chart)
+export async function adminGetOrderStatusChart(req, res) {
+  try {
+    const query = `
+      SELECT status, COUNT(*) as count
+      FROM orders
+      GROUP BY status
+    `;
+    const [rows] = await pool.query(query);
+    
+    // Map database status to UI status
+    const statusMap = {
+      'delivered': { label: 'Đã giao', color: '#10b981' },
+      'pending': { label: 'Đang giao', color: '#f59e0b' },
+      'shipped': { label: 'Đang giao', color: '#f59e0b' },
+      'cancelled': { label: 'Đã hủy', color: '#ef4444' }
+    };
+    
+    const aggregated = {};
+    rows.forEach(row => {
+      const ui = statusMap[row.status];
+      if (ui) {
+        if (!aggregated[ui.label]) {
+          aggregated[ui.label] = { count: 0, color: ui.color };
+        }
+        aggregated[ui.label].count += row.count;
+      }
+    });
+    
+    const labels = Object.keys(aggregated);
+    const data = labels.map(l => aggregated[l].count);
+    const colors = labels.map(l => aggregated[l].color);
+    
+    res.json({ labels, data, colors });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Lỗi lấy dữ liệu trạng thái đơn hàng' });
+  }
+}
+
+// Monthly revenue chart (with year filter)
+export async function adminGetMonthlyRevenueChart(req, res) {
+  try {
+    const year = req.query.year ? parseInt(req.query.year) : new Date().getFullYear();
+    
+    const query = `
+      SELECT MONTH(created_at) as month, COALESCE(SUM(total_amount), 0) as revenue
+      FROM orders
+      WHERE YEAR(created_at) = ?
+      AND status = 'delivered'
+      GROUP BY MONTH(created_at)
+      ORDER BY month ASC
+    `;
+    
+    const [rows] = await pool.query(query, [year]);
+    
+    const labels = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
+                    'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
+    
+    const data = new Array(12).fill(0);
+    rows.forEach(row => {
+      data[row.month - 1] = Number(row.revenue || 0);
+    });
+    
+    res.json({ labels, data, year });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Lỗi lấy dữ liệu doanh thu theo tháng' });
   }
 }

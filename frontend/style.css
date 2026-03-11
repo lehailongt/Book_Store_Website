@@ -103,6 +103,26 @@ header {
     width: 100%;
 }
 
+/* Cart badge in navbar (shared across pages) */
+.cart-nav-link {
+    position: relative;
+    display: inline-block;
+}
+
+.cart-badge {
+    background: var(--danger, #ef4444);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 10px;
+    position: absolute;
+    top: -2px;
+    right: -12px;
+    min-width: 18px;
+    text-align: center;
+}
+
 /* PROFILE DROPDOWN */
 .nav-profile {
     position: relative;

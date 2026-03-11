@@ -8,13 +8,18 @@ import {
   adminDeleteUser,
   adminToggleUserActive,
   adminUpdateUserRole,
+  adminGetBooks,
   adminCreateBook,
   adminUpdateBook,
   adminDeleteBook,
+  adminGetCategories,
+  adminUploadBookImage,
   adminGetOrders,
   adminGetOrderById,
   adminUpdateOrderStatus,
   adminGetMetrics,
+  adminGetOrderStatusChart,
+  adminGetMonthlyRevenueChart,
 } from '../controllers/adminController.js';
 
 const router = express.Router();
@@ -47,9 +52,12 @@ router.patch('/users/:id/toggle-active', adminToggleUserActive);
 router.patch('/users/:id/role', adminUpdateUserRole);
 
 // Books
+router.get('/books', adminGetBooks);
+router.get('/categories', adminGetCategories);
 router.post('/books', adminCreateBook);
 router.put('/books/:id', adminUpdateBook);
 router.delete('/books/:id', adminDeleteBook);
+router.post('/books/:id/image', adminUploadBookImage);
 
 // Orders
 router.get('/orders', adminGetOrders);
@@ -58,5 +66,7 @@ router.patch('/orders/:id/status', adminUpdateOrderStatus);
 
 // Metrics
 router.get('/metrics', adminGetMetrics);
+router.get('/order-status', adminGetOrderStatusChart);
+router.get('/revenue-by-month', adminGetMonthlyRevenueChart);
 
 export default router;

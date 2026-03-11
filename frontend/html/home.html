@@ -70,71 +70,16 @@
                 <h2>Sách Phổ Biến</h2>
                 <p>Những cuốn sách được yêu thích nhất</p>
             </div>
-            <div class="books-grid">
-                <div class="book-card">
-                    <div class="book-cover">
-                        <i class="bi bi-book"></i>
-                    </div>
-                    <h4>Đắc Nhân Tâm</h4>
-                    <p class="author">Dale Carnegie</p>
-                    <div class="rating">
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-half"></i>
-                    </div>
-                    <p class="price">45,000 VNĐ</p>
-                    <button class="btn-add-cart">Thêm Vào Giỏ</button>
+            <div class="carousel-wrapper">
+                <button class="carousel-arrow carousel-arrow-left" id="carouselPrevBtn" title="Xem các sách trước">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+                <div class="books-carousel" id="popularBooksContainer">
+                    <!-- Populated by home.js -->
                 </div>
-                <div class="book-card">
-                    <div class="book-cover">
-                        <i class="bi bi-book"></i>
-                    </div>
-                    <h4>1984</h4>
-                    <p class="author">George Orwell</p>
-                    <div class="rating">
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                    </div>
-                    <p class="price">55,000 VNĐ</p>
-                    <button class="btn-add-cart">Thêm Vào Giỏ</button>
-                </div>
-                <div class="book-card">
-                    <div class="book-cover">
-                        <i class="bi bi-book"></i>
-                    </div>
-                    <h4>Tư Duy Hệ Thống</h4>
-                    <p class="author">Donella H. Meadows</p>
-                    <div class="rating">
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-half"></i>
-                    </div>
-                    <p class="price">65,000 VNĐ</p>
-                    <button class="btn-add-cart">Thêm Vào Giỏ</button>
-                </div>
-                <div class="book-card">
-                    <div class="book-cover">
-                        <i class="bi bi-book"></i>
-                    </div>
-                    <h4>Thói Quen Nguyên Tử</h4>
-                    <p class="author">James Clear</p>
-                    <div class="rating">
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                        <i class="bi bi-star-fill"></i>
-                    </div>
-                    <p class="price">48,000 VNĐ</p>
-                    <button class="btn-add-cart">Thêm Vào Giỏ</button>
-                </div>
+                <button class="carousel-arrow carousel-arrow-right" id="carouselNextBtn" title="Xem các sách tiếp theo">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
             </div>
         </section>
 

@@ -590,6 +590,25 @@ select:focus {
   justify-content: flex-end;
 }
 
+.table-bottom-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.page-size-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.page-size-control select {
+  min-width: 110px;
+}
+
 #pagination button {
   padding: 8px 16px;
   border: 1px solid var(--border-color);
@@ -635,6 +654,18 @@ select:focus {
 
   to {
     opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .table-bottom-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #pagination {
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
 }
 
