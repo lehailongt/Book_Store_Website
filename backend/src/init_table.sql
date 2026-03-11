@@ -1,3 +1,5 @@
+DROP SCHEMA IF EXISTS book_store;
+
 CREATE DATABASE IF NOT EXISTS book_store;
 USE book_store;
 

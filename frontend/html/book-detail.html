@@ -1,9 +1,10 @@
+<!DOCTYPE html>
 <html lang="vi">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BookStore</title>
+    <title>Chi Tiết Sách - BookStore</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="../style.css">
     <link rel="stylesheet" href="../css/book-detail.css">
@@ -12,7 +13,6 @@
 </head>
 
 <body>
-
     <header>
         <nav class="navbar">
             <div class="nav-logo">
@@ -26,28 +26,30 @@
 
     <main class="detail-main">
         <div class="detail-container">
-            <div class="book-images">
-                <div class="main-image">
-                    <i class="bi bi-book"></i>
-                </div>
+            <div class="book-image">
+                <img id="bookImage" src="" alt="Book Cover" onerror="this.src='../images/pages/sample-book.png'">
             </div>
             <div class="book-info">
-                <h1 class="title"></h1>
-                <p class="author"></p>
+                <h1 id="bookTitle"></h1>
+                <p class="author" id="bookAuthor"></p>
                 <div class="price-section">
-                    <span class="price"></span>
-                    <span class="original-price"></span>
+                    <span class="price" id="bookPrice"></span>
                 </div>
+                <div class="categories" id="bookCategories"></div>
                 <div class="quantity">
                     <button class="qty-btn" id="qtyMinus">-</button>
-                    <input type="number" id="qtyInput" value="1" min="1">
+                    <input type="number" id="qtyInput" value="1" min="1" max="99">
                     <button class="qty-btn" id="qtyPlus">+</button>
                 </div>
                 <div class="actions">
-                    <button class="btn btn-primary" id="buyBtn"><i class="bi bi-cart-plus"></i> Mua ngay</button>
-                    <button class="btn btn-outline-secondary" id="wishBtn"><i class="bi bi-heart"></i></button>
+                    <button class="btn btn-primary" id="addToCartBtn">
+                        <i class="bi bi-cart-plus"></i> Thêm vào giỏ hàng
+                    </button>
                 </div>
-                <p class="short-desc"></p>
+                <div class="description">
+                    <h3>Mô tả</h3>
+                    <p id="bookDescription"></p>
+                </div>
             </div>
         </div>
 
@@ -56,38 +58,32 @@
             <table>
                 <tr>
                     <td>Tiêu đề</td>
-                    <td class="detail-title"></td>
+                    <td id="detailTitle"></td>
                 </tr>
                 <tr>
                     <td>Tác giả</td>
-                    <td class="detail-author"></td>
+                    <td id="detailAuthor"></td>
                 </tr>
                 <tr>
-                    <td>ISBN</td>
-                    <td class="detail-isbn"></td>
-                </tr>
-                <tr>
-                    <td>Ngôn ngữ</td>
-                    <td class="detail-language"></td>
-                </tr>
-                <tr>
-                    <td>Định dạng</td>
-                    <td class="detail-format"></td>
+                    <td>Giá</td>
+                    <td id="detailPrice"></td>
                 </tr>
                 <tr>
                     <td>Ngày xuất bản</td>
-                    <td class="detail-published"></td>
+                    <td id="detailPublishDate"></td>
                 </tr>
                 <tr>
-                    <td>Nhà xuất bản</td>
-                    <td class="detail-publisher"></td>
+                    <td>Thể loại</td>
+                    <td id="detailCategories"></td>
                 </tr>
             </table>
         </div>
 
         <div class="related-section">
             <h3>Sách Liên Quan</h3>
-            <div class="related-books" id="relatedBooks"></div>
+            <div class="related-books" id="relatedBooks">
+                <p>Đang tải...</p>
+            </div>
         </div>
     </main>
 
@@ -102,7 +98,6 @@
                 <ul>
                     <li><a href="./home.html">Trang Chủ</a></li>
                     <li><a href="./book.html">Sách</a></li>
-                    <li><a href="./sell-book.html">Bán Sách</a></li>
                     <li><a href="./cart.html">Giỏ Hàng</a></li>
                 </ul>
             </div>
@@ -119,7 +114,6 @@
             <p>&copy; 2026 BookStore. Tất cả quyền được bảo lưu.</p>
         </div>
     </footer>
-
 </body>
 
 </html>

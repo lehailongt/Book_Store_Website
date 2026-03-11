@@ -506,6 +506,83 @@ select:focus {
   justify-content: flex-end;
 }
 
+/* Modal chỉnh sửa user */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.modal.hidden {
+  display: none;
+}
+.modal-content {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  padding: 32px 24px;
+  min-width: 340px;
+  max-width: 95vw;
+  width: 400px;
+  position: relative;
+}
+.modal-content h2 {
+  margin-bottom: 18px;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #3b3b3b;
+}
+.modal-content label {
+  display: block;
+  margin-top: 12px;
+  margin-bottom: 4px;
+  font-size: 0.98rem;
+  color: #555;
+}
+.modal-content input,
+.modal-content select {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  margin-bottom: 8px;
+  font-size: 1rem;
+}
+.modal-content .btn-success {
+  width: 100%;
+  margin-top: 12px;
+  background: #4f8cff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 0;
+  font-size: 1.05rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.modal-content .btn-success:hover {
+  background: #2563eb;
+}
+.close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  font-size: 1.5rem;
+  color: #888;
+  cursor: pointer;
+  font-weight: bold;
+}
+.close:hover {
+  color: #ef4444;
+}
+
 /* Pagination */
 #pagination {
   display: flex;

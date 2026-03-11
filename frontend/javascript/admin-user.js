@@ -293,6 +293,62 @@
     els.detailRole.value = isCustomer ? 'customer' : 'admin';
   }
 
+  // Hiển thị modal chỉnh sửa và điền thông tin
+  function showEditUserModal(user) {
+    const modal = document.getElementById('edit-user-modal');
+    const form = document.getElementById('edit-user-form');
+    if (!modal || !form) return;
+
+    // Điền thông tin
+    form.full_name.value = user.full_name || '';
+    form.email.value = user.email || '';
+    form.phone_number.value = user.phone_number || '';
+    form.date_of_birth.value = user.date_of_birth ? user.date_of_birth.split('T')[0] : '';
+    form.password.value = '';
+    form.role.value = user.role || 'customer';
+    form.dataset.id = user.user_id || user.id || '';
+
+    modal.classList.remove('hidden');
+  }
+
+  // Đóng modal chỉnh sửa
+  function closeEditUserModal() {
+    const modal = document.getElementById('edit-user-modal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  // Gắn sự kiện cho nút đóng modal
+  document.getElementById('close-edit-modal')?.addEventListener('click', closeEditUserModal);
+
+  // Gắn sự kiện submit form chỉnh sửa
+  document.getElementById('edit-user-form')?.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const form = e.target;
+    const userId = form.dataset.id;
+    const userData = {
+      full_name: form.full_name.value,
+      email: form.email.value,
+      phone_number: form.phone_number.value,
+      date_of_birth: form.date_of_birth.value,
+      password: form.password.value,
+      role: form.role.value
+    };
+    await updateUser(userId, userData);
+    closeEditUserModal();
+    // Sau khi cập nhật, reload lại danh sách
+    loadUsers();
+  });
+
+  // Gắn sự kiện cho nút chỉnh sửa
+  document.querySelector('.table-wrap')?.addEventListener('click', function(e) {
+    if (e.target.closest('.btn-edit')) {
+      const tr = e.target.closest('tr');
+      const userId = tr?.getAttribute('data-id');
+      const user = state.rows.find(u => String(u.id || u.user_id) === String(userId));
+      if (user) showEditUserModal(user);
+    }
+  });
+
   //=========================
   // Data loading
   //=========================
@@ -399,6 +455,34 @@
     } catch (err) {
       console.error(err);
       showToast(err.message || 'Tải chi tiết người dùng thất bại', 'error');
+    }
+  }
+
+  //=========================
+  // Update User Information
+  //=========================
+  async function updateUser(userId, userData) {
+    try {
+      const response = await fetch(`${ADMIN_API_BASE}/users/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update user');
+      }
+
+      const result = await response.json();
+      alert('Cập nhật thông tin thành công!');
+      return result;
+    } catch (error) {
+      console.error('Error updating user:', error);
+      alert(`Lỗi: ${error.message}`);
     }
   }
 

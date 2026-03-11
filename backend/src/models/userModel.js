@@ -28,6 +28,13 @@ class UserModel {
         return rows[0];
     }
 
+    // Tìm user bằng ID
+    static async findById(id) {
+        const sql = 'SELECT * FROM users WHERE user_id = ?';
+        const [rows] = await pool.execute(sql, [id]);
+        return rows[0];
+    }
+
     // Lấy tất cả users
     static async findAll() {
         // note: users table uses user_id and full_name
