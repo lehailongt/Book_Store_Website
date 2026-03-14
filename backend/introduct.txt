@@ -5,3 +5,5 @@ mysql2
 dotenv
 -D nodemon
 multer
+swagger-jsdoc
+swagger-ui-express

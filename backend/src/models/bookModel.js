@@ -182,7 +182,7 @@ export class BookModel {
         }
     }
 
-    // Lấy sách phổ biến (top books by quantity sold - chỉ đơn hàng đã giao/đang giao)
+    // Lấy sách phổ biến (top books by quantity sold - chỉ đơn hàng delivered/shipped)
     static async getPopularBooks(limit = 10) {
         try {
             const [books] = await pool.query(`
@@ -194,15 +194,26 @@ export class BookModel {
                     b.description,
                     b.image_url,
                     b.publish_date,
-                    GROUP_CONCAT(c.category_name) as categories,
-                    COALESCE(SUM(oi.quantity), 0) as total_sold
+                    COALESCE(cat.categories, '') as categories,
+                    COALESCE(sales.total_sold, 0) as total_sold
                 FROM books b
-                LEFT JOIN bookcategories bc ON b.book_id = bc.book_id
-                LEFT JOIN categories c ON bc.category_id = c.category_id
-                LEFT JOIN orderitems oi ON b.book_id = oi.book_id
-                LEFT JOIN orders o ON oi.order_id = o.order_id 
-                    AND (o.status = 'Đã giao' OR o.status = 'Đang giao')
-                GROUP BY b.book_id, b.book_name, b.author_name, b.price, b.description, b.image_url, b.publish_date
+                LEFT JOIN (
+                    SELECT 
+                        bc.book_id,
+                        GROUP_CONCAT(DISTINCT c.category_name ORDER BY c.category_name SEPARATOR ',') as categories
+                    FROM bookcategories bc
+                    INNER JOIN categories c ON bc.category_id = c.category_id
+                    GROUP BY bc.book_id
+                ) cat ON b.book_id = cat.book_id
+                LEFT JOIN (
+                    SELECT 
+                        od.book_id,
+                        SUM(od.quantity) as total_sold
+                    FROM orderdetails od
+                    INNER JOIN orders o ON od.order_id = o.order_id
+                    WHERE o.status IN ('delivered', 'shipped')
+                    GROUP BY od.book_id
+                ) sales ON b.book_id = sales.book_id
                 ORDER BY total_sold DESC, b.book_id DESC
                 LIMIT ?
             `, [limit]);

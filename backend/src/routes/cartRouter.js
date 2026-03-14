@@ -10,22 +10,110 @@ import {
 
 const router = express.Router();
 
-// Lấy số lượng items (specific route first)
+/**
+ * @swagger
+ * /api/cart/count:
+ *   get:
+ *     tags: [Cart]
+ *     summary: Lấy số lượng items trong giỏ
+ *     responses:
+ *       200:
+ *         description: Số lượng items
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 count:
+ *                   type: integer
+ */
 router.get('/count', getCartCount);
 
-// Lấy giỏ hàng
+/**
+ * @swagger
+ * /api/cart:
+ *   get:
+ *     tags: [Cart]
+ *     summary: Lấy giỏ hàng
+ *     responses:
+ *       200:
+ *         description: Chi tiết giỏ hàng
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ */
 router.get('/', getCart);
 
-// Thêm vào giỏ hàng
+/**
+ * @swagger
+ * /api/cart:
+ *   post:
+ *     tags: [Cart]
+ *     summary: Thêm vào giỏ hàng
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Success
+ */
 router.post('/', addToCart);
 
-// Cập nhật số lượng
+/**
+ * @swagger
+ * /api/cart/update:
+ *   put:
+ *     tags: [Cart]
+ *     summary: Cập nhật số lượng
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Updated
+ */
 router.put('/update', updateQuantity);
 
-// Xóa item (specific route before general)
+/**
+ * @swagger
+ * /api/cart/{book_id}:
+ *   delete:
+ *     tags: [Cart]
+ *     summary: Xóa item khỏi giỏ
+ *     parameters:
+ *       - in: path
+ *         name: book_id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Deleted
+ */
 router.delete('/:book_id', removeFromCart);
 
-// Xóa toàn bộ (general route last)
+/**
+ * @swagger
+ * /api/cart:
+ *   delete:
+ *     tags: [Cart]
+ *     summary: Xóa toàn bộ giỏ hàng
+ *     responses:
+ *       200:
+ *         description: Cleared
+ */
 router.delete('/', clearCart);
 
 export default router;
