@@ -1,6 +1,6 @@
 import pool from '../config/database.js';
 
-export class OrderModel {
+class OrderModel {
     // Tạo đơn hàng mới
     static async createOrder(userId, totalAmount, deliveryAddress) {
         try {

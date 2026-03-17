@@ -265,74 +265,65 @@ async function renderRelatedBooks(currentBook) {
             });
         });
 
+        // Setup carousel drag functionality
+        setupRelatedBooksCarousel(container);
+
     } catch (error) {
         console.error('Error rendering related books:', error);
         container.innerHTML = '<p style="text-align: center; padding: 20px;">Không thể tải sách liên quan.</p>';
     }
 }
 
-// Render books by the same author
-async function renderBooksByAuthor(currentBook) {
-    const container = document.getElementById('authorBooks');
-    
-    try {
-        const allBooks = await fetchAllBooks();
-        
-        // Filter books by same author only
-        const authorBooks = allBooks
-            .filter(book => {
-                if (book.id === currentBook.id) return false;
-                return book.author === currentBook.author;
-            })
-            .slice(0, 12);
+// Setup carousel drag functionality for related books
+function setupRelatedBooksCarousel(carousel) {
+    if (!carousel) return;
 
-        if (authorBooks.length === 0) {
-            container.innerHTML = '<p style="text-align: center; padding: 20px;">Không có sách khác từ tác giả này.</p>';
-            return;
-        }
+    let isDown = false;
+    let startX;
+    let scrollLeft;
 
-        // Render as carousel row (CSS handles styling)
-        container.classList.add('author-books');
-        
-        container.innerHTML = authorBooks.map(book => {
-            const categoryBadges = book.categories && book.categories.length > 0
-                ? book.categories.map(cat => `<span class="category-badge">${cat.name}</span>`).join('')
-                : '<span class="category-badge">Khác</span>';
-            
-            let imageSrc = book.image_url;
-            if (imageSrc && !imageSrc.startsWith('/') && !imageSrc.startsWith('http')) {
-                imageSrc = '../' + imageSrc;
-            }
+    carousel.addEventListener('mousedown', (e) => {
+        isDown = true;
+        startX = e.pageX - carousel.offsetLeft;
+        scrollLeft = carousel.scrollLeft;
+        carousel.style.cursor = 'grabbing';
+    });
 
-            return `
-                <div class="author-book-card" data-book-id="${book.id}">
-                    <div class="book-cover-popular">
-                        ${imageSrc ? `<img src="${imageSrc}" alt="${book.name}" class="author-book-img">` : '<i class="bi bi-book"></i>'}
-                    </div>
-                    <div class="book-info">
-                        <h4 class="book-title">${book.name}</h4>
-                        <p class="book-author">${book.author || 'Không rõ'}</p>
-                        <div class="book-categories">
-                            ${categoryBadges}
-                        </div>
-                        <p class="book-price">${formatPrice(book.price)}đ</p>
-                    </div>
-                </div>
-            `;
-        }).join('');
+    document.addEventListener('mouseleave', () => {
+        isDown = false;
+        carousel.style.cursor = 'grab';
+    });
 
-        // Add click handlers
-        document.querySelectorAll('.author-book-card').forEach(card => {
-            card.addEventListener('click', () => {
-                const bookId = card.dataset.bookId;
-                window.location.href = `./book-detail.html?id=${bookId}`;
-            });
-        });
+    document.addEventListener('mouseup', () => {
+        isDown = false;
+        carousel.style.cursor = 'grab';
+    });
 
-    } catch (error) {
-        console.error('Error rendering author books:', error);
-        container.innerHTML = '<p style="text-align: center; padding: 20px;">Không thể tải sách của tác giả.</p>';
-    }
+    carousel.addEventListener('mousemove', (e) => {
+        if (!isDown) return;
+        e.preventDefault();
+        const x = e.pageX - carousel.offsetLeft;
+        const walk = (x - startX) * 1;
+        carousel.scrollLeft = scrollLeft - walk;
+    });
+
+    // Touch support for mobile
+    carousel.addEventListener('touchstart', (e) => {
+        isDown = true;
+        startX = e.touches[0].pageX - carousel.offsetLeft;
+        scrollLeft = carousel.scrollLeft;
+    });
+
+    document.addEventListener('touchend', () => {
+        isDown = false;
+    });
+
+    carousel.addEventListener('touchmove', (e) => {
+        if (!isDown) return;
+        const x = e.touches[0].pageX - carousel.offsetLeft;
+        const walk = (x - startX) * 1;
+        carousel.scrollLeft = scrollLeft - walk;
+    });
 }
 
 // Format price
@@ -449,18 +440,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <p>Đang tải...</p>
                 </div>
             </div>
-
-            <div class="author-books-section">
-                <h3>Sách Cùng Tác Giả</h3>
-                <div class="author-books" id="authorBooks">
-                    <p>Đang tải...</p>
-                </div>
-            </div>
         `;
 
         renderBook(book);
         renderRelatedBooks(book);
-        renderBooksByAuthor(book);
     } else {
         document.querySelector('.detail-main').innerHTML = '<div style="text-align: center; padding: 50px;"><h2>Không tìm thấy sách</h2><p>Sách bạn tìm kiếm không tồn tại hoặc đã bị xóa.</p><a href="./book.html" class="btn btn-primary">Quay lại trang sách</a></div>';
     }

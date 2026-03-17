@@ -2,6 +2,7 @@
   'use strict';
 
   const ADMIN_API_BASE = 'http://localhost:5001/api/admin';
+  const ADMIN_API_METRICS = `${ADMIN_API_BASE}/metrics`;
 
   function getToken() {
     return localStorage.getItem('accessToken') || localStorage.getItem('token') || '';
@@ -21,7 +22,7 @@
 
   async function fetchAdmin(path) {
     const token = getToken();
-    const res = await fetch(`${ADMIN_API_BASE}${path}`, { headers: { 'Authorization': `Bearer ${token}` } });
+    const res = await fetch(`${ADMIN_API_METRICS}${path}`, { headers: { 'Authorization': `Bearer ${token}` } });
     const data = await res.json().catch(() => null);
     if (!res.ok) { throw new Error((data && (data.message || data.error)) || `HTTP ${res.status}`); }
     return data;
@@ -31,7 +32,8 @@
 
   async function loadMetrics() {
     try {
-      const m = await fetchAdmin('/metrics');
+      const response = await fetchAdmin('/');
+      const m = response.data || response; // Handle both wrapped and unwrapped responses
       const formatMoney = (v) => `₫ ${Number(v || 0).toLocaleString('vi-VN')}`;
       
       // Update cards
@@ -45,8 +47,6 @@
       if (card_books) card_books.textContent = (m.totalBooks || 0).toLocaleString('vi-VN');
       if (card_sold) card_sold.textContent = (m.totalBooksSold || 0).toLocaleString('vi-VN');
       
-      // Store totalOrders for pie chart
-      window.totalOrdersCount = m.totalOrders || 0;
       return m;
     } catch (err) { console.error(err); return null; }
   }
@@ -71,7 +71,8 @@
   let orderStatusChartInstance = null;
   async function loadOrderStatusChart() {
     try {
-      const data = await fetchAdmin('/order-status');
+      const response = await fetchAdmin('/order-status');
+      const data = response.data || response; // Handle both wrapped and unwrapped responses
 
       const ctx = document.getElementById('orderStatusChart');
       if (!ctx) return;
@@ -80,11 +81,14 @@
         orderStatusChartInstance.destroy();
       }
 
+      // Calculate total orders from chart data
+      const totalOrders = (data.data || []).reduce((sum, count) => sum + count, 0);
+      
       // Display center text
       const countDisplay = document.getElementById('orderCountDisplay');
       const countText = document.getElementById('orderCount');
       if (countDisplay && countText) {
-        countText.textContent = (window.totalOrdersCount || 0).toLocaleString('vi-VN');
+        countText.textContent = totalOrders.toLocaleString('vi-VN');
         countDisplay.style.display = 'block';
       }
 
@@ -122,7 +126,8 @@
   let monthlyRevenueChartInstance = null;
   async function loadMonthlyRevenueChart(year) {
     try {
-      const data = await fetchAdmin(`/revenue-by-month?year=${year}`);
+      const response = await fetchAdmin(`/revenue-by-month?year=${year}`);
+      const data = response.data || response; // Handle both wrapped and unwrapped responses
 
       const ctx = document.getElementById('monthlyRevenueChart');
       if (!ctx) return;
@@ -172,11 +177,11 @@
   async function init() {
     if (!ensureAdmin()) return;
     
-    // Load metrics first (this sets window.totalOrdersCount)
-    await loadMetrics();
-    
-    // Then load charts that depend on totalOrdersCount
+    // Load order status chart first to calculate totalOrders
     await loadOrderStatusChart();
+    
+    // Load metrics cards
+    await loadMetrics();
     
     // const currentYear = new Date().getFullYear();
     const currentYear = 2023;

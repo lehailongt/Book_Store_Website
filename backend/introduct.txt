@@ -7,3 +7,4 @@ dotenv
 multer
 swagger-jsdoc
 swagger-ui-express
+jsonwebtoken@9.0.0

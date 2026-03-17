@@ -2,6 +2,7 @@
   'use strict';
 
   const ADMIN_API_BASE = 'http://localhost:5001/api/admin';
+  const ADMIN_API_ORDERS = `${ADMIN_API_BASE}/orders`;
   const PAGE_SIZE_DEFAULT = 10;
 
   function getToken() {
@@ -100,7 +101,7 @@
     total: 0,
     filters: {
       keyword: '',
-      status: '', // Pending, Processing, Shipped, Completed, Canceled
+      status: '', // Shipped, Delivered, Canceled
       from: '',
       to: '',
     },
@@ -298,7 +299,7 @@
         const code = o.code || id.slice(-8);
         const customer = (o.customer && (o.customer.name || o.customer.email)) || o.customerName || o.userName || 'N/A';
         const total = (o.totalAmount != null ? o.totalAmount : o.total) || 0;
-        const status = o.status || 'Pending';
+        const status = o.status || 'Shipped';
         const createdAt = formatDate(o.createdAt || o.created_at);
 
         let nextActions = '';
@@ -412,7 +413,9 @@
     params.set('limit', '1000');
 
     try {
-      const data = await fetchAdmin(`/orders?${params.toString()}`, { method: 'GET' });
+      const data = await fetchAdmin(`/orders?${params.toString()}`, { 
+        method: 'GET' 
+      });
       let rows = [];
       let total = 0;
 

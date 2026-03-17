@@ -1,31 +1,4 @@
 import pool from '../config/database.js';
-import multer from 'multer';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const BOOK_IMAGES_DIR = path.join(__dirname, '../../../frontend/images/books');
-
-const _bookImageStorage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    if (!fs.existsSync(BOOK_IMAGES_DIR)) fs.mkdirSync(BOOK_IMAGES_DIR, { recursive: true });
-    cb(null, BOOK_IMAGES_DIR);
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${req.params.id}.png`);
-  }
-});
-
-const _uploadBookImage = multer({
-  storage: _bookImageStorage,
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) cb(null, true);
-    else cb(new Error('Chỉ chấp nhận file ảnh'), false);
-  },
-  limits: { fileSize: 5 * 1024 * 1024 }
-}).single('image');
 
 function toNumber(v, def = 0) {
   const n = Number(v);
@@ -56,7 +29,7 @@ export async function adminGetBooks(req, res) {
     }
 
     let query = `
-      SELECT DISTINCT
+      SELECT 
         b.book_id,
         b.book_name AS name,
         b.author_name AS author,
@@ -64,7 +37,7 @@ export async function adminGetBooks(req, res) {
         b.description,
         b.publish_date,
         b.image_url,
-        GROUP_CONCAT(c.category_name SEPARATOR ', ') AS categories
+        JSON_ARRAYAGG(JSON_OBJECT('id', bc.category_id, 'name', c.category_name)) AS categoryList
       FROM books b
       LEFT JOIN bookcategories bc ON b.book_id = bc.book_id
       LEFT JOIN categories c ON bc.category_id = c.category_id
@@ -78,6 +51,15 @@ export async function adminGetBooks(req, res) {
     params.push(limit, offset);
 
     const [rows] = await pool.query(query, params);
+
+    // Clean up categoryList - remove null entries
+    rows.forEach(row => {
+      if (row.categoryList && Array.isArray(row.categoryList)) {
+        row.categoryList = row.categoryList.filter(cat => cat && cat.id && cat.name);
+      } else {
+        row.categoryList = [];
+      }
+    });
 
     // Get total count
     let countQuery = 'SELECT COUNT(DISTINCT b.book_id) AS total FROM books b';
@@ -123,16 +105,11 @@ export async function adminCreateBook(req, res) {
       const newBookId = result.insertId;
 
       if (Array.isArray(categories) && categories.length > 0) {
-        for (const catName of categories) {
-          const [catRows] = await connection.query('SELECT category_id FROM categories WHERE category_name = ?', [catName]);
-          let catId;
-          if (catRows.length > 0) {
-            catId = catRows[0].category_id;
-          } else {
-            const [ins] = await connection.query('INSERT INTO categories (category_name) VALUES (?)', [catName]);
-            catId = ins.insertId;
+        for (const catId of categories) {
+          const catIdNum = parseInt(catId);
+          if (Number.isFinite(catIdNum) && catIdNum > 0) {
+            await connection.query('INSERT INTO bookcategories (book_id, category_id) VALUES (?, ?)', [newBookId, catIdNum]);
           }
-          await connection.query('INSERT INTO bookcategories (book_id, category_id) VALUES (?, ?)', [newBookId, catId]);
         }
       }
 
@@ -175,16 +152,11 @@ export async function adminUpdateBook(req, res) {
       // Update categories
       await connection.query('DELETE FROM bookcategories WHERE book_id = ?', [id]);
       if (Array.isArray(categories) && categories.length > 0) {
-        for (const catName of categories) {
-          const [catRows] = await connection.query('SELECT category_id FROM categories WHERE category_name = ?', [catName]);
-          let catId;
-          if (catRows.length > 0) {
-            catId = catRows[0].category_id;
-          } else {
-            const [ins] = await connection.query('INSERT INTO categories (category_name) VALUES (?)', [catName]);
-            catId = ins.insertId;
+        for (const catId of categories) {
+          const catIdNum = parseInt(catId);
+          if (Number.isFinite(catIdNum) && catIdNum > 0) {
+            await connection.query('INSERT INTO bookcategories (book_id, category_id) VALUES (?, ?)', [id, catIdNum]);
           }
-          await connection.query('INSERT INTO bookcategories (book_id, category_id) VALUES (?, ?)', [id, catId]);
         }
       }
 
@@ -228,44 +200,66 @@ export async function adminDeleteBook(req, res) {
 
 export async function adminGetCategories(req, res) {
   try {
-    const [rows] = await pool.query('SELECT category_id, category_name AS name, description FROM categories ORDER BY category_name');
-    res.json({ categories: rows });
+    const [rows] = await pool.query('SELECT category_id, category_name AS name FROM categories ORDER BY category_name');
+    res.json({
+      success: true,
+      data: rows
+    });
   } catch (err) {
     console.error('Error in adminGetCategories:', err);
-    res.status(500).json({ message: 'Lỗi tải danh sách thể loại' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Lỗi tải danh sách thể loại' 
+    });
   }
 }
 
-export async function adminUploadBookImage(req, res) {
+export async function adminGetBookById(req, res) {
   try {
-    const { id } = req.params;
-
-    // Check if book exists
-    const [bookCheck] = await pool.query('SELECT book_id FROM books WHERE book_id = ?', [id]);
-    if (bookCheck.length === 0) {
-      return res.status(404).json({ message: 'Không tìm thấy sách' });
-    }
-
-    _uploadBookImage(req, res, async (err) => {
-      if (err) {
-        console.error('Upload error:', err);
-        return res.status(400).json({ message: err.message || 'Lỗi upload ảnh' });
-      }
-
-      if (!req.file) {
-        return res.status(400).json({ message: 'Không có file được upload' });
-      }
-
-      const imageUrl = `/images/books/${req.file.filename}`;
-      await pool.query('UPDATE books SET image_url = ? WHERE book_id = ?', [imageUrl, id]);
-
-      res.json({
-        message: 'Upload ảnh thành công',
-        image_url: imageUrl
+    const id = req.params.id;
+    
+    // Get book info
+    const [bookRows] = await pool.query(`
+      SELECT 
+        b.book_id,
+        b.book_name AS name,
+        b.author_name AS author,
+        b.price,
+        b.description,
+        b.publish_date,
+        b.image_url
+      FROM books b
+      WHERE b.book_id = ?
+    `, [id]);
+    
+    if (bookRows.length === 0) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Không tìm thấy sách' 
       });
+    }
+    
+    const book = bookRows[0];
+    
+    // Get categories for this book
+    const [catRows] = await pool.query(`
+      SELECT bc.category_id AS id, c.category_name AS name
+      FROM bookcategories bc
+      JOIN categories c ON bc.category_id = c.category_id
+      WHERE bc.book_id = ?
+    `, [id]);
+    
+    book.categoryList = catRows || [];
+    
+    res.json({
+      success: true,
+      data: book
     });
   } catch (err) {
-    console.error('Error in adminUploadBookImage:', err);
-    res.status(500).json({ message: 'Lỗi upload ảnh' });
+    console.error('Error in adminGetBookById:', err);
+    res.status(500).json({ 
+      success: false,
+      message: 'Lỗi tải chi tiết sách' 
+    });
   }
 }

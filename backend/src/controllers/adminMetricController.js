@@ -2,14 +2,8 @@ import pool from '../config/database.js';
 
 export async function adminGetMetrics(req, res) {
   try {
-    // Total orders (delivered only)
-    const [[{ totalOrders }]] = await pool.query('SELECT COUNT(*) AS totalOrders FROM orders WHERE status = "delivered"');
-
     // Revenue (sum of delivered orders)
     const [[{ revenue }]] = await pool.query('SELECT COALESCE(SUM(total_amount),0) AS revenue FROM orders WHERE status = "delivered"');
-
-    // Total users
-    const [[{ totalUsers }]] = await pool.query('SELECT COUNT(*) AS totalUsers FROM users WHERE role = "customer"');
 
     // Total books in stock
     const [[{ totalBooks }]] = await pool.query('SELECT COUNT(*) AS totalBooks FROM books');
@@ -22,16 +16,24 @@ export async function adminGetMetrics(req, res) {
       WHERE o.status = 'delivered'
     `);
 
+    // Total users
+    const [[{ totalUsers }]] = await pool.query('SELECT COUNT(*) AS totalUsers FROM users');
+
     res.json({
-      totalOrders: Number(totalOrders || 0),
-      revenue: Number(revenue || 0),
-      totalUsers: Number(totalUsers || 0),
-      totalBooks: Number(totalBooks || 0),
-      totalBooksSold: Number(totalBooksSold || 0),
+      success: true,
+      data: {
+        revenue: Number(revenue || 0),
+        totalBooks: Number(totalBooks || 0),
+        totalBooksSold: Number(totalBooksSold || 0),
+        totalUsers: Number(totalUsers || 0),
+      }
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Lỗi lấy metrics dashboard' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Lỗi lấy metrics dashboard' 
+    });
   }
 }
 
@@ -48,9 +50,8 @@ export async function adminGetOrderStatusChart(req, res) {
     // Map database status to UI status
     const statusMap = {
       'delivered': { label: 'Đã giao', color: '#10b981' },
-      'pending': { label: 'Đang giao', color: '#f59e0b' },
       'shipped': { label: 'Đang giao', color: '#f59e0b' },
-      'cancelled': { label: 'Đã hủy', color: '#ef4444' }
+      'canceled': { label: 'Đã hủy', color: '#ef4444' }
     };
 
     const aggregated = {};
@@ -68,10 +69,16 @@ export async function adminGetOrderStatusChart(req, res) {
     const data = labels.map(l => aggregated[l].count);
     const colors = labels.map(l => aggregated[l].color);
 
-    res.json({ labels, data, colors });
+    res.json({ 
+      success: true, 
+      data: { labels, data, colors } 
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Lỗi lấy dữ liệu trạng thái đơn hàng' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Lỗi lấy dữ liệu trạng thái đơn hàng' 
+    });
   }
 }
 
@@ -99,7 +106,10 @@ export async function adminGetMonthlyRevenueChart(req, res) {
       data[row.month - 1] = Number(row.revenue || 0);
     });
 
-    res.json({ labels, data, year });
+    res.json({ 
+      success: true,
+      data: { labels, data, year } 
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Lỗi lấy dữ liệu doanh thu theo tháng' });

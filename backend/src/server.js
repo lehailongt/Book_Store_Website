@@ -30,10 +30,11 @@ const swaggerOptions = {
         ],
         components: {
             securitySchemes: {
-                BearerAuth: {
+                bearerAuth: {
                     type: 'http',
                     scheme: 'bearer',
-                    description: 'JWT token',
+                    bearerFormat: 'JWT',
+                    description: 'JWT Bearer token for admin endpoints',
                 },
             },
         },
@@ -47,6 +48,7 @@ const swaggerOptions = {
         './src/routes/adminMetricRouter.js',
         './src/routes/adminUserRouter.js',
         './src/routes/adminBookRouter.js',
+        './src/routes/adminCategoryRouter.js',
         './src/routes/adminOrderRouter.js',
     ],
 };

@@ -1,7 +1,8 @@
 (function () {
   'use strict';
 
-  const API_BASE = 'http://localhost:5001/api/admin/books';
+  const ADMIN_API_BASE = 'http://localhost:5001/api/admin';
+  const ADMIN_API_BOOKS = `${ADMIN_API_BASE}/books`;
   const PAGE_SIZE_DEFAULT = 10;
 
   function getToken() {
@@ -91,7 +92,7 @@
     els.tbody.innerHTML = state.rows.map((b, i) => {
       const idx = startIndex + i + 1;
       const img = getImagePath(b.image_url);
-      const categories = (b.categories || '').split(',').filter(Boolean).join(', ');
+      const categories = (b.categoryList || []).map(c => c.name).join(', ');
       const created = b.publish_date ? new Date(b.publish_date).toLocaleDateString('vi-VN') : '';
       return `
         <tr data-id="${escapeHtml(b.id || b.book_id || '')}">
@@ -142,7 +143,7 @@
 
   async function loadCategories() {
     try {
-      const data = await fetchJSON('http://localhost:5001/api/admin/categories');
+      const data = await fetchJSON(`${ADMIN_API_BOOKS}/categories`);
       state.categories = Array.isArray(data) ? data : (data && data.data) || [];
       renderCategories();
     } catch (err) { console.error(err); }
@@ -154,7 +155,10 @@
     if (kw) { items = items.filter(b => `${b.name || ''} ${b.author || ''}`.toLowerCase().includes(kw)); }
     if (state.filters.category) {
       const cat = state.filters.category.toLowerCase();
-      items = items.filter(b => String(b.categories || '').toLowerCase().split(',').map(s => s.trim()).includes(cat));
+      items = items.filter(b => {
+        const catNames = (b.categoryList || []).map(c => c.name.toLowerCase());
+        return catNames.some(name => name.includes(cat));
+      });
     }
     if (state.filters.price) {
       const [minStr, maxStr] = state.filters.price.split('-');
@@ -212,9 +216,9 @@
     state.page = page; state.limit = limit;
     renderLoading();
     try {
-      console.log('Loading books from:', API_BASE);
+      console.log('Loading books from:', ADMIN_API_BOOKS);
       const params = new URLSearchParams({ page: 1, limit: 1000 });
-      const url = `${API_BASE}?${params.toString()}`;
+      const url = `${ADMIN_API_BOOKS}?${params.toString()}`;
       console.log('Request URL:', url);
       
       const data = await fetchJSON(url);
@@ -240,22 +244,23 @@
   function showErr(id, msg) { const el = document.getElementById(id); if (el) el.textContent = msg; }
   function clearErr(...ids) { ids.forEach(id => { const el = document.getElementById(id); if (el) el.textContent = ''; }); }
 
-  function renderCategorySelect(selectId, excludeNames = []) {
+  function renderCategorySelect(selectId, excludeIds = []) {
     const select = document.getElementById(selectId);
     if (!select) return;
-    const exclude = excludeNames.map(s => s.trim().toLowerCase());
-    const filtering = state.categories.filter(c => !exclude.includes((c.name || '').trim().toLowerCase()));
+    const exclude = excludeIds.map(id => String(id));
+    const filtering = state.categories.filter(c => !exclude.includes(String(c.category_id)));
     select.innerHTML = '<option value="">-- Chọn thể loại --</option>' +
-      filtering.map(c => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)}</option>`).join('');
+      filtering.map(c => `<option value="${c.category_id}">${escapeHtml(c.name)}</option>`).join('');
   }
 
-  function renderCategoryTags(containerId, selectedNames = [], selectId = '', addBtnId = '') {
+  function renderCategoryTags(containerId, selectedIds = [], selectId = '', addBtnId = '') {
     const container = document.getElementById(containerId);
     if (!container) return;
-    container.innerHTML = selectedNames.map(name => `
+    const categoryMap = Object.fromEntries(state.categories.map(c => [String(c.category_id), c.name]));
+    container.innerHTML = selectedIds.map(id => `
       <span class="category-tag">
-        ${escapeHtml(name)}
-        <button type="button" class="remove-btn" data-name="${escapeHtml(name)}" title="Xóa">×</button>
+        ${escapeHtml(categoryMap[String(id)] || 'Unknown')}
+        <button type="button" class="remove-btn" data-id="${escapeHtml(id)}" title="Xóa">×</button>
       </span>
     `).join('');
     
@@ -263,10 +268,10 @@
     container.querySelectorAll('.remove-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
-        const name = btn.getAttribute('data-name');
-        selectedNames = selectedNames.filter(n => n !== name);
-        renderCategoryTags(containerId, selectedNames, selectId, addBtnId);
-        if (selectId) renderCategorySelect(selectId, selectedNames);
+        const id = btn.getAttribute('data-id');
+        selectedIds = selectedIds.filter(sid => String(sid) !== String(id));
+        renderCategoryTags(containerId, selectedIds, selectId, addBtnId);
+        if (selectId) renderCategorySelect(selectId, selectedIds);
       });
     });
   }
@@ -276,7 +281,7 @@
     if (!container) return [];
     return [...container.querySelectorAll('.category-tag')].map(tag => {
       const btn = tag.querySelector('.remove-btn');
-      return btn ? btn.getAttribute('data-name') : '';
+      return btn ? parseInt(btn.getAttribute('data-id')) : null;
     }).filter(Boolean);
   }
 
@@ -353,19 +358,7 @@
     });
   }
 
-  async function uploadBookImage(bookId, fileInput) {
-    if (!fileInput || !fileInput.files || !fileInput.files[0]) return null;
-    const formData = new FormData();
-    formData.append('image', fileInput.files[0]);
-    const res = await fetch(`http://localhost:5001/api/admin/books/${bookId}/image`, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${getToken()}` },
-      body: formData
-    });
-    const data = await res.json().catch(() => null);
-    if (!res.ok) throw new Error((data && data.message) || 'Lỗi upload ảnh');
-    return data.imageUrl;
-  }
+
 
   function bind() {
     if (els.btnSearch) {
@@ -421,10 +414,13 @@
           setImagePreview('eb-image-preview', getImagePath(book.image_url));
           const ebFile = document.getElementById('eb-image-file');
           if (ebFile) ebFile.value = '';
-          // Categories tags
-          const bookCats = (book.categories || '').split(',').map(c => c.trim()).filter(Boolean);
-          renderCategoryTags('eb-categories-tags', bookCats);
-          renderCategorySelect('eb-category-select', bookCats);
+          // Categories tags - use categoryList from response which has IDs
+          let bookCatIds = [];
+          if (book.categoryList && Array.isArray(book.categoryList)) {
+            bookCatIds = book.categoryList.filter(cat => cat && cat.id).map(cat => cat.id);
+          }
+          renderCategoryTags('eb-categories-tags', bookCatIds);
+          renderCategorySelect('eb-category-select', bookCatIds);
           // Bind add category button
           const addBtn = document.getElementById('eb-add-category-btn');
           const select = document.getElementById('eb-category-select');
@@ -432,9 +428,10 @@
             addBtn.onclick = (e) => {
               e.preventDefault();
               if (!select || !select.value) { alert('Chọn thể loại trước'); return; }
+              const catId = parseInt(select.value);
               const current = getSelectedCategoriesFromTags('eb-categories-tags');
-              if (current.includes(select.value)) { alert('Thể loại này đã được chọn'); return; }
-              current.push(select.value);
+              if (current.includes(catId)) { alert('Thể loại này đã được chọn'); return; }
+              current.push(catId);
               renderCategoryTags('eb-categories-tags', current, 'eb-category-select', 'eb-add-category-btn');
               renderCategorySelect('eb-category-select', current);
               select.value = '';
@@ -447,7 +444,7 @@
         } else if (e.target.closest('.btn-delete')) {
           if (confirm('Xác nhận xóa sách ID: ' + id + ' ?')) {
             try {
-              const res = await fetch(`http://localhost:5001/api/admin/books/${id}`, {
+              const res = await fetch(`${ADMIN_API_BOOKS}/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${getToken()}` }
               });
@@ -482,9 +479,10 @@
             addBtn.onclick = (e) => {
               e.preventDefault();
               if (!select || !select.value) { alert('Chọn thể loại trước'); return; }
+              const catId = parseInt(select.value);
               const current = getSelectedCategoriesFromTags('cb-categories-tags');
-              if (current.includes(select.value)) { alert('Thể loại này đã được chọn'); return; }
-              current.push(select.value);
+              if (current.includes(catId)) { alert('Thể loại này đã được chọn'); return; }
+              current.push(catId);
               renderCategoryTags('cb-categories-tags', current, 'cb-category-select', 'cb-add-category-btn');
               renderCategorySelect('cb-category-select', current);
               select.value = '';
@@ -522,8 +520,7 @@
         const submitBtn = document.getElementById('cb-submit-btn');
         if (submitBtn) submitBtn.disabled = true;
         try {
-          // 1. Tạo sách (chưa có ảnh)
-          const res = await fetch('http://localhost:5001/api/admin/books', {
+          const res = await fetch(ADMIN_API_BOOKS, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
             body: JSON.stringify({ bookName: nameVal, authorName: authorVal, price, description: desc, publishDate: publishDate || null, imageUrl: null, categories })
@@ -531,21 +528,6 @@
           const data = await res.json().catch(() => null);
           if (!res.ok) throw new Error((data && (data.message || data.error)) || 'Lỗi thêm sách');
           const bookId = data.bookId;
-
-          // 2. Upload ảnh nếu có file, rồi cập nhật imageUrl
-          const cbFile = document.getElementById('cb-image-file');
-          if (cbFile && cbFile.files && cbFile.files[0] && bookId) {
-            try {
-              const imageUrl = await uploadBookImage(bookId, cbFile);
-              if (imageUrl) {
-                await fetch(`http://localhost:5001/api/admin/books/${bookId}`, {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
-                  body: JSON.stringify({ bookName: nameVal, authorName: authorVal, price, description: desc, publishDate: publishDate || null, imageUrl, categories })
-                });
-              }
-            } catch (imgErr) { console.warn('Upload ảnh thất bại:', imgErr.message); }
-          }
 
           alert('Thêm sách thành công');
           document.getElementById('createBookModal').style.display = 'none';
@@ -589,19 +571,11 @@
         const submitBtn = document.getElementById('eb-submit-btn');
         if (submitBtn) submitBtn.disabled = true;
         try {
-          // Upload ảnh mới nếu chọn file
-          let imageUrl = null;
-          const ebFile = document.getElementById('eb-image-file');
-          if (ebFile && ebFile.files && ebFile.files[0]) {
-            imageUrl = await uploadBookImage(id, ebFile);
-          }
-          // Giữ ảnh cũ nếu không chọn file mới
-          if (!imageUrl) {
-            const book = state.rows.find(b => String(b.id || b.book_id) === String(id));
-            imageUrl = (book && book.image_url) || null;
-          }
+          // Get current imageUrl from existing book
+          const book = state.rows.find(b => String(b.id || b.book_id) === String(id));
+          const imageUrl = (book && book.image_url) || null;
 
-          const res = await fetch(`http://localhost:5001/api/admin/books/${id}`, {
+          const res = await fetch(`${ADMIN_API_BOOKS}/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
             body: JSON.stringify({ bookName: nameVal, authorName: authorVal, price, description: desc, publishDate: publishDate || null, imageUrl, categories })

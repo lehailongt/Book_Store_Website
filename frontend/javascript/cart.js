@@ -337,6 +337,7 @@ async function handleCheckout() {
         return;
     }
 
+    // Tính tổng tiền để hiển thị cho user (không gửi lên server)
     const totalAmount = cartItems.reduce((acc, item) => {
         const price = item.price || 0;
         return acc + price * (item.quantity || 1);
@@ -344,18 +345,17 @@ async function handleCheckout() {
 
     showLoading(true);
     try {
+        // Frontend chỉ gửi book_id và quantity, server sẽ lấy giá từ database
         const orderItems = cartItems.map(item => ({
             book_id: item.book_id,
-            quantity: item.quantity,
-            price: item.price
+            quantity: item.quantity
         }));
 
         const response = await fetchAPI(`${API_BASE}/orders`, {
             method: 'POST',
             body: JSON.stringify({
                 items: orderItems,
-                delivery_address: address,
-                total_amount: totalAmount
+                delivery_address: address
             })
         });
 
@@ -365,11 +365,11 @@ async function handleCheckout() {
             if (typeof window.updateCartBadgeFromAPI === 'function') {
                 await window.updateCartBadgeFromAPI();
             }
-            showToast('Đặt hàng thành công!', 'success');
+            showToast(`Đặt hàng thành công! Tổng tiền: ${formatPrice(totalAmount)}đ`, 'success');
             setTimeout(() => window.location.href = './order.html', 1500);
         }
     } catch (error) {
-        showToast('Lỗi đặt hàng', 'error');
+        showToast('Lỗi đặt hàng: ' + error.message, 'error');
     } finally {
         showLoading(false);
     }

@@ -73,7 +73,7 @@ export async function adminGetOrders(req, res) {
     const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
 
     const [rows] = await pool.query(
-      `SELECT o.order_id AS id, o.total_amount, o.status, o.created_at, u.full_name, u.email
+      `SELECT o.order_id, o.total_amount, o.status, o.created_at, o.delivery_address, u.full_name, u.email
        FROM orders o
        JOIN users u ON u.user_id = o.user_id
        ${whereSql}
@@ -89,14 +89,12 @@ export async function adminGetOrders(req, res) {
     );
 
     const data = rows.map((o) => ({
-      id: o.id,
-      code: String(o.id),
+      orderId: o.order_id,
       customerName: o.full_name,
       totalAmount: Number(o.total_amount || 0),
       status: mapDbOrderStatusToUi(o.status),
+      deliveryAddress: o.delivery_address,
       createdAt: o.created_at,
-      shippingService: 'Standard',
-      trackingCode: '',
     }));
 
     res.json({ page, limit, total: Number(total), data });
@@ -110,7 +108,7 @@ export async function adminGetOrderById(req, res) {
   try {
     const id = req.params.id;
     const [rows] = await pool.query(
-      `SELECT o.order_id AS id, o.total_amount, o.status, o.created_at, o.delivery_address,
+      `SELECT o.order_id, o.total_amount, o.status, o.created_at, o.delivery_address,
               u.full_name, u.email
        FROM orders o JOIN users u ON u.user_id = o.user_id
        WHERE o.order_id = ?`,
@@ -120,28 +118,28 @@ export async function adminGetOrderById(req, res) {
     const o = rows[0];
 
     const [items] = await pool.query(
-      `SELECT od.order_detail_id AS id, od.quantity, od.price AS unit_price,
-              b.book_id AS book_id, b.book_name AS title
+      `SELECT od.order_detail_id, od.quantity, od.price,
+              b.book_id, b.book_name
        FROM orderdetails od JOIN books b ON b.book_id = od.book_id
        WHERE od.order_id = ?`,
       [id]
     );
 
     res.json({
-      id: o.id,
-      code: String(o.id),
+      orderId: o.order_id,
       status: mapDbOrderStatusToUi(o.status),
       totalAmount: Number(o.total_amount || 0),
       createdAt: o.created_at,
-      address: { line1: o.delivery_address },
-      customer: { name: o.full_name, email: o.email },
+      deliveryAddress: o.delivery_address,
+      customerName: o.full_name,
+      customerEmail: o.email,
       items: items.map((it) => ({
-        id: it.id,
+        orderDetailId: it.order_detail_id,
+        bookId: it.book_id,
+        bookName: it.book_name,
         quantity: it.quantity,
-        unitPrice: Number(it.unit_price || 0),
-        title: it.title,
+        unitPrice: Number(it.price || 0),
       })),
-      payment: 'COD',
     });
   } catch (err) {
     console.error(err);

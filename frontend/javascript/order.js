@@ -145,7 +145,6 @@ async function renderOrdersForUser() {
                 <td><span class="badge badge-${statusBadge}">${status}</span></td>
                 <td>
                     <button class="btn btn-sm btn-outline-primary view-btn" style="padding: 4px 8px; font-size: 12px;">Xem</button>
-                    <button class="btn btn-sm btn-outline-danger cancel-btn" style="padding: 4px 8px; font-size: 12px;">Hủy</button>
                 </td>
             `;
 
@@ -181,13 +180,6 @@ async function renderOrdersForUser() {
                     detailsCell.style.display = 'none';
                 }
             });
-
-            const cancelBtn = tr.querySelector('.cancel-btn');
-            // Disable cancel button for now
-            cancelBtn.disabled = true;
-            cancelBtn.style.opacity = '0.5';
-            cancelBtn.style.cursor = 'not-allowed';
-            cancelBtn.title = 'Chức năng đang được phát triển';
 
             tbody.appendChild(tr);
             tbody.appendChild(detailsRow);

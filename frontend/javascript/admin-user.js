@@ -5,6 +5,7 @@
   // Configuration
   //=========================
   const ADMIN_API_BASE = 'http://localhost:5001/api/admin';
+  const ADMIN_API_USERS = `${ADMIN_API_BASE}/users`;
   const PAGE_SIZE_DEFAULT = 10;
 
   // Try to read token and current user from localStorage
@@ -232,7 +233,7 @@
     els.tbody.innerHTML = state.rows
       .map((u, i) => {
         const idx = indexOffset + i + 1;
-        const name = escapeHtml(u.name || u.fullName || u.username || '');
+        const name = escapeHtml(u.full_name || '');
         const email = escapeHtml(u.email || '');
         const roleValue = escapeHtml(u.role || 'customer');
         
@@ -305,7 +306,7 @@
   function fillDetail(user) {
     if (!els.modal) return;
     els.detailId.value = user.id || user._id || '';
-    els.detailName.value = user.name || user.full_name || user.fullName || '';
+    els.detailName.value = user.full_name || '';
     els.detailEmail.value = user.email || '';
     els.detailPhone.value = user.phone_number || '';
     if (els.detailDate) {
@@ -321,8 +322,6 @@
     const modal = document.getElementById('editUserModal');
     if (modal) modal.style.display = 'flex';
   }
-
-
 
   //=========================
   // Data loading
@@ -343,9 +342,16 @@
     params.set('limit', '1000');
 
     try {
+      console.log('📡 Loading users...');
+      const token = getToken();
+      console.log('   Token:', token ? `${token.substring(0, 20)}...` : '(missing)');
+      console.log('   URL:', `${ADMIN_API_USERS}?${params.toString()}`);
+
       const data = await fetchAdmin(`/users?${params.toString()}`, {
         method: 'GET',
       });
+
+      console.log('   ✅ Response received:', data);
 
       // Expect either { data, total, page, limit } or array
       let rows = [];
@@ -355,7 +361,7 @@
         rows = data;
         total = data.length;
       } else if (data && typeof data === 'object') {
-        rows = data.data || data.items || data.results || [];
+        rows = data.data || data.items || data.results || data.users || [];
         total = data.total != null ? Number(data.total) : rows.length;
         // If server paginates, keep page and limit from server if provided
         if (data.page) state.page = Number(data.page) || state.page;
@@ -397,7 +403,7 @@
     if (!userId || !newRole) return;
 
     try {
-      const res = await fetch(`${ADMIN_API_BASE}/users/${encodeURIComponent(userId)}/role`, {
+      const res = await fetch(`${ADMIN_API_USERS}/${encodeURIComponent(userId)}/role`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -436,7 +442,7 @@
   //=========================
   async function updateUser(userId, userData) {
     try {
-      const response = await fetch(`${ADMIN_API_BASE}/users/${userId}`, {
+      const response = await fetch(`${ADMIN_API_USERS}/${userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -583,13 +589,14 @@
         const password = document.getElementById('cu-password').value;
         const role = document.getElementById('cu-role').value;
 
-        if (!fullName) { alert('Họ và tên không được để trống.'); return; }
-        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('Email không hợp lệ.'); return; }
-        if (phone && !/^[0-9]{9,11}$/.test(phone)) { alert('Số điện thoại không hợp lệ (9-11 chữ số).'); return; }
-        if (!password || password.length < 6) { alert('Mật khẩu phải có ít nhất 6 ký tự.'); return; }
-        if (!role) { alert('Vui lòng chọn vai trò.'); return; }
+        // Inline validation
+        if (!fullName) { showToast('Họ và tên không được để trống', 'error'); return; }
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Email không hợp lệ', 'error'); return; }
+        if (phone && !/^[0-9]{9,11}$/.test(phone)) { showToast('Số điện thoại phải là 9-11 chữ số', 'error'); return; }
+        if (!password || password.length < 6) { showToast('Mật khẩu phải có ít nhất 6 ký tự', 'error'); return; }
+        if (!role) { showToast('Vui lòng chọn vai trò', 'error'); return; }
 
-        const body = { fullName, email, phone_number: phone, password, role };
+        const body = { full_name: fullName, email, phone_number: phone, password, role };
         if (dateOfBirth) {
           body.date_of_birth = dateOfBirth;
         }
@@ -601,7 +608,7 @@
           createUserForm.reset();
           loadUsers({ page: 1 });
         } catch (err) {
-          alert(err.message || 'Lỗi thêm người dùng');
+          showToast(err.message || 'Lỗi thêm người dùng', 'error');
         }
       });
     }
@@ -617,19 +624,19 @@
         const phone = document.getElementById('eu-phone').value.trim();
         const role = document.getElementById('eu-role').value;
 
-        if (!fullName) { alert('Họ và tên không được để trống.'); return; }
-        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('Email không hợp lệ.'); return; }
-        if (phone && !/^[0-9]{9,11}$/.test(phone)) { alert('Số điện thoại không hợp lệ (9-11 chữ số).'); return; }
-        if (!role) { alert('Vui lòng chọn vai trò.'); return; }
+        // Inline validation
+        if (!fullName) { showToast('Họ và tên không được để trống', 'error'); return; }
+        if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Email không hợp lệ', 'error'); return; }
+        if (phone && !/^[0-9]{9,11}$/.test(phone)) { showToast('Số điện thoại phải là 9-11 chữ số', 'error'); return; }
+        if (!role) { showToast('Vui lòng chọn vai trò', 'error'); return; }
 
         const body = {
-          fullName,
+          full_name: fullName,
           email,
           phone_number: phone,
           role
         };
 
-        // Thêm ngày sinh nếu có giá trị
         const dateInput = document.getElementById('eu-date');
         if (dateInput && dateInput.value) {
           body.date_of_birth = dateInput.value;

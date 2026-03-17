@@ -2,6 +2,7 @@
 import express from 'express';
 import adminUserRouter from './adminUserRouter.js';
 import adminBookRouter from './adminBookRouter.js';
+import adminCategoryRouter from './adminCategoryRouter.js';
 import adminOrderRouter from './adminOrderRouter.js';
 import adminMetricRouter from './adminMetricRouter.js';
 import { adminAuthMiddleware } from '../middlewares/adminAuthMiddleware.js';
@@ -13,7 +14,8 @@ router.use(adminAuthMiddleware);
 
 router.use('/users', adminUserRouter);
 router.use('/books', adminBookRouter);
+router.use('/categories', adminCategoryRouter);
 router.use('/orders', adminOrderRouter);
-router.use('/metric', adminMetricRouter);
+router.use('/metrics', adminMetricRouter);
 
 export default router;

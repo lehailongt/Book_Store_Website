@@ -27,6 +27,7 @@
         <a href="./admin-order.html"><i class="bi bi-receipt icon"></i>Order</a>
         <a href="./admin-user.html"><i class="bi bi-people icon"></i>User</a>
         <a href="./admin-book.html"><i class="bi bi-book icon"></i>Book</a>
+        <a href="./admin-category.html"><i class="bi bi-tag icon"></i>Category</a>
         <a href="./login.html"><i class="bi bi-box-arrow-right"></i>Logout</a>
       </nav>
     </aside>
@@ -69,10 +70,11 @@
             <h3 style="margin: 0 0 24px 0; color: #1f2937;">Trạng thái đơn hàng</h3>
             <div style="position: relative; height: 300px; width: 100%;">
               <canvas id="orderStatusChart"></canvas>
-              <div id="orderCountDisplay" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; display: none;">
+              <div id="orderCountDisplay" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, calc(-50% - 12px)); text-align: center; display: none;">
                 <div style="font-size: 32px; font-weight: bold; color: #1f2937;" id="orderCount">0</div>
-                <div style="font-size: 12px; color: #6b7280;">Tổng đơn hàng</div>
-              </div>            </div>
+                <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">Tổng đơn hàng</div>
+              </div>
+            </div>
           </div>
 
           <!-- Line Chart: Monthly Revenue -->

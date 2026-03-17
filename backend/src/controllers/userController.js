@@ -78,53 +78,7 @@ class UserController {
             return res.status(500).json({ message: 'Lỗi máy chủ khi đăng nhập' });
         }
     }
-
-    // Cập nhật thông tin người dùng
-    static async updateUser(req, res) {
-        try {
-            const { id } = req.params;
-            const { full_name, email, phone_number, date_of_birth, password, role } = req.body;
-
-            // Kiểm tra xem user có tồn tại không
-            const user = await UserModel.findById(id);
-            if (!user) {
-                return res.status(404).json({ message: 'Người dùng không tồn tại' });
-            }
-
-            // Kiểm tra email có bị trùng không
-            if (email && email !== user.email) {
-                const existingUser = await UserModel.findByEmail(email);
-                if (existingUser) {
-                    return res.status(400).json({ message: 'Email đã được sử dụng' });
-                }
-            }
-
-            // Mã hóa mật khẩu nếu có thay đổi
-            let hashedPassword = user.password;
-            if (password) {
-                hashedPassword = await bcrypt.hash(password, 10);
-            }
-
-            // Cập nhật thông tin người dùng
-            const updated = await UserModel.update(id, {
-                full_name,
-                email,
-                phone_number,
-                date_of_birth,
-                password: hashedPassword,
-                role
-            });
-
-            if (updated) {
-                return res.status(200).json({ message: 'Cập nhật thông tin thành công' });
-            } else {
-                return res.status(500).json({ message: 'Cập nhật thông tin thất bại' });
-            }
-        } catch (error) {
-            console.error('❌ Update user error:', error);
-            return res.status(500).json({ message: 'Lỗi máy chủ khi cập nhật thông tin' });
-        }
-    }
+    
 }
 
 export default UserController;

@@ -1,6 +1,6 @@
 import pool from '../config/database.js';
 
-export class BookModel {
+class BookModel {
     // Helper: Transform categories string to array
     static transformCategoriesToArray(book) {
         if (!book) return null;

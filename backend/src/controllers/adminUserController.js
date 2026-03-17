@@ -6,13 +6,41 @@ function toNumber(v, def = 0) {
   return Number.isFinite(n) && n > 0 ? n : def;
 }
 
+// Validation functions
+function validateEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || ''));
+}
+
+function validatePhone(phone) {
+  return !phone || /^[0-9]{9,11}$/.test(String(phone || ''));
+}
+
+function validatePassword(password) {
+  return password && String(password).length >= 6;
+}
+
+function validateUser(data, isCreate = true) {
+  if (!data.full_name || String(data.full_name).trim() === '') {
+    return 'Họ và tên không được để trống';
+  }
+  if (!validateEmail(data.email)) {
+    return 'Email không hợp lệ';
+  }
+  if (!validatePhone(data.phone_number)) {
+    return 'Số điện thoại phải là 9-11 chữ số';
+  }
+  if (isCreate && !validatePassword(data.password)) {
+    return 'Mật khẩu phải có ít nhất 6 ký tự';
+  }
+  return null;
+}
+
 function mapDbUserRoleToUi(role) {
-  return String(role) === 'customer' ? 'user' : String(role || 'user');
+  return String(role) === 'customer' ? 'customer' : String(role || 'customer');
 }
 
 function mapUiRoleToDb(role) {
   const r = String(role || '').toLowerCase();
-  if (r === 'user' || r === 'customer') return 'customer';
   if (r === 'admin') return 'admin';
   return 'customer';
 }
@@ -59,7 +87,7 @@ export async function adminGetUsers(req, res) {
     }));
 
     res.json({
-      users,
+      data: users,
       total: countRows[0].total,
       page,
       limit
@@ -95,11 +123,13 @@ export async function adminCreateUser(req, res) {
   try {
     const { full_name, email, password, role, date_of_birth, phone_number, image_url } = req.body;
 
-    if (!full_name || !email || !password) {
-      return res.status(400).json({ message: 'Thiếu thông tin bắt buộc' });
+    // Validate input
+    const error = validateUser({ full_name, email, password, phone_number }, true);
+    if (error) {
+      return res.status(400).json({ message: error });
     }
 
-    // Check email exists
+    // Check email uniqueness
     const [existing] = await pool.query('SELECT user_id FROM users WHERE email = ?', [email]);
     if (existing.length > 0) {
       return res.status(409).json({ message: 'Email đã tồn tại' });
@@ -127,7 +157,12 @@ export async function adminUpdateUser(req, res) {
   try {
     const { id } = req.params;
     const { full_name, email, role, date_of_birth, phone_number, image_url } = req.body;
+    const error = validateUser({ full_name, email, phone_number }, false);
+    if (error) {
+      return res.status(400).json({ message: error });
+    }
 
+    // 
     // Check if user exists
     const [existing] = await pool.query('SELECT user_id FROM users WHERE user_id = ?', [id]);
     if (existing.length === 0) {
@@ -170,17 +205,6 @@ export async function adminDeleteUser(req, res) {
     res.json({ message: 'Người dùng đã được xóa' });
   } catch (e) {
     console.error('adminDeleteUser error:', e);
-    res.status(500).json({ message: 'Lỗi server' });
-  }
-}
-
-export async function adminToggleUserActive(req, res) {
-  try {
-    const { id } = req.params;
-    // Note: Schema doesn't have active field, this is a stub
-    res.status(501).json({ message: 'Chức năng chưa được triển khai' });
-  } catch (e) {
-    console.error('adminToggleUserActive error:', e);
     res.status(500).json({ message: 'Lỗi server' });
   }
 }

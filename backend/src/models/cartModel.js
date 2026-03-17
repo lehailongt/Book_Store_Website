@@ -1,6 +1,6 @@
 import pool from '../config/database.js';
 
-export class CartModel {
+class CartModel {
     // Lấy giỏ hàng của user
     static async getCart(userId) {
         try {

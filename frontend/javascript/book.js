@@ -1,5 +1,6 @@
 // API Configuration
 const API_BASE = 'http://localhost:5001/api';
+const API_BOOKS = `${API_BASE}/books`;
 
 function getToken() {
     return localStorage.getItem('accessToken') || localStorage.getItem('token') || '';
@@ -46,7 +47,6 @@ const searchAuthorInput = document.getElementById('searchAuthor');
 const searchKeywordsInput = document.getElementById('searchKeywords');
 const minPriceInput = document.getElementById('minPrice');
 const maxPriceInput = document.getElementById('maxPrice');
-const categoryCheckboxes = document.querySelectorAll('.category-checkbox');
 const applyFilterBtn = document.getElementById('applyFilter');
 const resetFilterBtn = document.getElementById('resetFilter');
 const sortBySelect = document.getElementById('sortBy');
@@ -59,7 +59,7 @@ const totalBooksSpan = document.getElementById('totalBooks');
 // Fetch data from API
 async function fetchBooksData() {
     try {
-        const response = await fetch(`${API_BASE}/books`);
+        const response = await fetch(`${API_BOOKS}`);
         const result = await response.json();
         if (result.success) {
             window.booksData = result.data.map(book => ({
@@ -84,7 +84,7 @@ async function fetchBooksData() {
 
 async function fetchCategoriesData() {
     try {
-        const response = await fetch(`${API_BASE}/books/categories/all`);
+        const response = await fetch(`${API_BOOKS}/categories/all`);
         const result = await response.json();
         if (result.success) {
             state.allCategories = result.data;
@@ -99,9 +99,8 @@ function populateCategories() {
     const categoriesList = document.querySelector('.categories-list');
     if (!categoriesList) return;
     
-    // Xóa các checkbox cũ
-    const existingCheckboxes = categoriesList.querySelectorAll('.checkbox-item');
-    existingCheckboxes.forEach(item => item.remove());
+    // Xóa tất cả checkbox cũ
+    categoriesList.innerHTML = '';
     
     // Thêm checkbox mới dựa trên danh sách từ API
     state.allCategories.forEach(category => {
@@ -115,7 +114,7 @@ function populateCategories() {
     });
     
     // Re-attach event listeners cho checkbox mới
-    const newCheckboxes = document.querySelectorAll('.category-checkbox');
+    const newCheckboxes = categoriesList.querySelectorAll('.category-checkbox');
     newCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', applyFilters);
     });
@@ -144,6 +143,7 @@ function applyFilters() {
     const minPrice = parseInt(minPriceInput.value) || 0;
     const maxPrice = parseInt(maxPriceInput.value) || Infinity;
     
+    const categoryCheckboxes = document.querySelectorAll('.category-checkbox');
     const selectedCategories = Array.from(categoryCheckboxes)
         .filter(cb => cb.checked)
         .map(cb => cb.value);
@@ -177,7 +177,10 @@ function resetFilters() {
     searchKeywordsInput.value = '';
     minPriceInput.value = '0';
     maxPriceInput.value = '1000000';
+    
+    const categoryCheckboxes = document.querySelectorAll('.category-checkbox');
     categoryCheckboxes.forEach(cb => cb.checked = false);
+    
     sortBySelect.value = 'newest';
     
     state.filteredBooks = [...state.allBooks];
