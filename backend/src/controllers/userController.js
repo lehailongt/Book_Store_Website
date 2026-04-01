@@ -1,6 +1,7 @@
 // src/controllers/userController.js
 import UserModel from '../models/userModel.js';
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 
 class UserController {
     // đăng ký user mới
@@ -64,13 +65,16 @@ class UserController {
                 role: user.role
             };
 
-            // Generate a simple demo token (Base64-URL). Note: For production use JWT instead.
-            const tokenPayload = {
-                id: payload.id,
-                role: payload.role,
-                iat: Math.floor(Date.now() / 1000)
-            };
-            const token = Buffer.from(JSON.stringify(tokenPayload)).toString('base64url');
+            // Generate JWT token
+            const token = jwt.sign(
+                { 
+                    id: payload.id, 
+                    email: payload.email,
+                    role: payload.role 
+                },
+                process.env.JWT_SECRET,
+                { expiresIn: '24h' }
+            );
 
             return res.json({ message: 'Đăng nhập thành công', user: payload, token });
         } catch (error) {

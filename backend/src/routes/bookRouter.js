@@ -53,23 +53,12 @@ router.get("/categories/all", getAllCategories);
  * /api/books:
  *   get:
  *     tags: [Books]
- *     summary: Lấy danh sách sách (có phân trang)
- *     description: Lấy danh sách tất cả sách với khả năng phân trang
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           default: 1
- *         example: 1
- *         description: Số trang
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 12
- *         example: 12
- *         description: Số sách mỗi trang
+ *     summary: Lấy tất cả sách
+ *     description: |
+ *       Lấy danh sách TẤT CẢ sách từ hệ thống.
+ *       
+ *       **Lưu ý:** API trả về tất cả sách (không phân trang ở server).
+ *       Phân trang và lọc dữ liệu xảy ra phía CLIENT.
  *     responses:
  *       200:
  *         description: Danh sách sách lấy thành công

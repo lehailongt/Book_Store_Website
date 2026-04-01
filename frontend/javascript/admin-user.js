@@ -142,8 +142,8 @@
     total: 0,
     filters: {
       keyword: '',
-      role: '',
-      status: '', // 'active' | 'locked' | ''
+      searchType: 'all', // 'all' | 'name' | 'email' | 'phone'
+      role: '', // '' | 'customer' | 'admin'
     },
     rows: [],
     allRows: [],
@@ -157,10 +157,9 @@
   function cacheElements() {
     els.keyword = document.getElementById('keyword');
     els.pageSize = document.getElementById('page-size');
-    els.role = document.getElementById('role');
-    els.status = document.getElementById('status');
+    els.searchType = document.getElementById('search-type');
+    els.roleFilter = document.getElementById('role-filter');
     els.btnSearch = document.getElementById('btn-search');
-    els.btnRefresh = document.getElementById('btn-refresh');
     els.table = document.getElementById('user-table');
     els.tbody = els.table ? els.table.querySelector('tbody') : null;
     els.pagination = document.getElementById('pagination');
@@ -317,12 +316,6 @@
     els.detailRole.value = user.role === 'admin' ? 'admin' : 'customer';
   }
 
-  // Display edit modal with user data
-  function openModal() {
-    const modal = document.getElementById('editUserModal');
-    if (modal) modal.style.display = 'flex';
-  }
-
   //=========================
   // Data loading
   //=========================
@@ -336,8 +329,8 @@
 
     const params = new URLSearchParams();
     if (state.filters.keyword) params.set('keyword', state.filters.keyword.trim());
+    if (state.filters.searchType) params.set('searchType', state.filters.searchType);
     if (state.filters.role) params.set('role', state.filters.role);
-    if (state.filters.status) params.set('status', state.filters.status);
     params.set('page', '1');
     params.set('limit', '1000');
 
@@ -472,48 +465,23 @@
     if (els.btnSearch) {
       els.btnSearch.addEventListener('click', () => {
         state.page = 1;
-        state.filters.keyword = (els.keyword.value || '').trim();
-        state.filters.role = (els.role && els.role.value) || '';
-        state.filters.status = (els.status && els.status.value) || '';
-        loadUsers({ page: 1 });
-      });
-    }
-
-    if (els.btnRefresh) {
-      els.btnRefresh.addEventListener('click', () => {
-        els.keyword.value = '';
-        els.role.value = '';
-        els.status.value = '';
-        state.filters = { keyword: '', role: '', status: '' };
-        state.page = 1;
+        state.filters.keyword = (els.keyword && els.keyword.value || '').trim();
+        state.filters.searchType = (els.searchType && els.searchType.value) || 'all';
+        state.filters.role = (els.roleFilter && els.roleFilter.value) || '';
         loadUsers({ page: 1 });
       });
     }
 
     if (els.keyword) {
-      els.keyword.addEventListener(
-        'input',
-        debounce(() => {
+      els.keyword.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
           state.page = 1;
           state.filters.keyword = (els.keyword.value || '').trim();
+          state.filters.searchType = (els.searchType && els.searchType.value) || 'all';
+          state.filters.role = (els.roleFilter && els.roleFilter.value) || '';
           loadUsers({ page: 1 });
-        }, 500)
-      );
-    }
-
-    if (els.role) {
-      els.role.addEventListener('change', () => {
-        state.page = 1;
-        state.filters.role = els.role.value || '';
-        loadUsers({ page: 1 });
-      });
-    }
-
-    if (els.status) {
-      els.status.addEventListener('change', () => {
-        state.page = 1;
-        state.filters.status = els.status.value || '';
-        loadUsers({ page: 1 });
+        }
       });
     }
 

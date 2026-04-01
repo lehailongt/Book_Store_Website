@@ -112,12 +112,7 @@ function populateCategories() {
         `;
         categoriesList.appendChild(label);
     });
-    
-    // Re-attach event listeners cho checkbox mới
-    const newCheckboxes = categoriesList.querySelectorAll('.category-checkbox');
-    newCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', applyFilters);
-    });
+    // Do not attach change listeners - only search on button click or Enter
 }
 
 // Event Listeners
@@ -126,13 +121,48 @@ resetFilterBtn.addEventListener('click', resetFilters);
 sortBySelect.addEventListener('change', applySorting);
 viewBtns.forEach(btn => btn.addEventListener('click', changeView));
 
-// Real-time search (update on input)
-searchNameInput.addEventListener('input', applyFilters);
-searchBookIdInput.addEventListener('input', applyFilters);
-searchAuthorInput.addEventListener('input', applyFilters);
-searchKeywordsInput.addEventListener('input', applyFilters);
-minPriceInput.addEventListener('input', applyFilters);
-maxPriceInput.addEventListener('input', applyFilters);
+// Search/Filter Behavior:
+// - Only trigger applyFilters() when user clicks "Apply Filter" button OR presses Enter in search fields
+// - NO auto-search on input or checkbox change
+// - This allows users to modify multiple filters before searching
+// 
+// Enter key listeners on search fields
+searchNameInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        applyFilters();
+    }
+});
+searchBookIdInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        applyFilters();
+    }
+});
+searchAuthorInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        applyFilters();
+    }
+});
+searchKeywordsInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        applyFilters();
+    }
+});
+minPriceInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        applyFilters();
+    }
+});
+maxPriceInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        applyFilters();
+    }
+});
 
 // Filter Logic
 function applyFilters() {

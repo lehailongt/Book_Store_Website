@@ -46,10 +46,21 @@
       <div class="content">
         <div class="table-wrap">
           <div class="table-toolbar">
+            <select id="search-type" class="filter-select" title="Tìm kiếm theo">
+              <option value="all">Tất cả</option>
+              <option value="name">Theo tên</option>
+              <option value="email">Theo email</option>
+              <option value="phone">Theo SĐT</option>
+            </select>
             <div class="search">
               <i class="bi bi-search"></i>
-              <input id="keyword" class="input" placeholder="Nhập tên..." />
+              <input id="keyword" class="input" placeholder="Nhập từ khóa..." />
             </div>
+            <select id="role-filter" class="filter-select" title="Lọc theo vai trò">
+              <option value="">Tất cả vai trò</option>
+              <option value="customer">Customer</option>
+              <option value="admin">Admin</option>
+            </select>
             <button id="btn-search" class="btn">Lọc</button>
           </div>
           <table class="table" id="user-table">

@@ -51,14 +51,32 @@ export async function adminGetUsers(req, res) {
     const limit = toNumber(req.query.limit, 10);
     const offset = (page - 1) * limit;
     const keyword = (req.query.keyword || '').trim();
+    const searchType = (req.query.searchType || 'all').trim().toLowerCase();
     const role = (req.query.role || '').trim().toLowerCase();
 
     const where = [];
     const params = [];
 
     if (keyword) {
-      where.push('(u.full_name LIKE ? OR u.email LIKE ?)');
-      params.push(`%${keyword}%`, `%${keyword}%`);
+      switch (searchType) {
+        case 'name':
+          where.push('u.full_name LIKE ?');
+          params.push(`%${keyword}%`);
+          break;
+        case 'email':
+          where.push('u.email LIKE ?');
+          params.push(`%${keyword}%`);
+          break;
+        case 'phone':
+          where.push('u.phone_number LIKE ?');
+          params.push(`%${keyword}%`);
+          break;
+        case 'all':
+        default:
+          where.push('(u.full_name LIKE ? OR u.email LIKE ? OR u.phone_number LIKE ?)');
+          params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`);
+          break;
+      }
     }
     if (role) {
       where.push('u.role = ?');

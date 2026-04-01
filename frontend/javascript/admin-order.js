@@ -238,8 +238,8 @@
 
     sorted.sort((a, b) => {
       if (state.sort.sortBy === 'order_id') {
-        const aid = String(a.code || a.id || a._id || '');
-        const bid = String(b.code || b.id || b._id || '');
+        const aid = String(a.orderId || a.code || a.id || a._id || '');
+        const bid = String(b.orderId || b.code || b.id || b._id || '');
         return aid.localeCompare(bid, 'vi', { numeric: true }) * factor;
       }
 
@@ -295,8 +295,18 @@
     els.tbody.innerHTML = state.rows
       .map((o, i) => {
         const idx = startIndex + i + 1;
-        const id = o.id || o._id || '';
-        const code = o.code || id.slice(-8);
+        // Try multiple field names for order ID
+        const id = o.orderId || o.order_id || o.id || o._id || '';
+        // Use orderId as the display code, fallback to id
+        const code = String(id || '').trim() || 'N/A';
+        
+        if (i === 0) {
+          console.log('📝 Sample order object:', o);
+          console.log('   Available fields:', Object.keys(o));
+          console.log('   orderId:', o.orderId, '| order_id:', o.order_id, '| id:', o.id, '| _id:', o._id);
+          console.log('   Final code:', code);
+        }
+        
         const customer = (o.customer && (o.customer.name || o.customer.email)) || o.customerName || o.userName || 'N/A';
         const total = (o.totalAmount != null ? o.totalAmount : o.total) || 0;
         const status = o.status || 'Shipped';
@@ -314,7 +324,7 @@
         return `
           <tr data-id="${escapeHtml(id)}">
             <td>${idx}</td>
-            <td style="font-weight: 500;">#${escapeHtml(code)}</td>
+            <td style="font-weight: 500;">#${escapeHtml(String(code))}</td>
             <td>${escapeHtml(customer)}</td>
             <td>${Number(total).toLocaleString('vi-VN')} đ</td>
             <td>${statusBadge(status)}</td>
@@ -365,8 +375,8 @@
   function fillDetail(order) {
     if (!els.modal) return;
 
-    const id = order.id || order._id || '';
-    const code = order.code || id.slice(-8);
+    const id = order.orderId || order.order_id || order.id || order._id || '';
+    const code = String(id || '').trim() || 'N/A';
     els.detailId.textContent = `#${code}`;
     const customer = (order.customer && (order.customer.name || order.customer.email)) || order.customerName || order.userName || 'N/A';
     els.detailCustomer.textContent = customer;
@@ -416,6 +426,7 @@
       const data = await fetchAdmin(`/orders?${params.toString()}`, { 
         method: 'GET' 
       });
+      console.log('📡 API Response:', data);
       let rows = [];
       let total = 0;
 
@@ -429,6 +440,9 @@
         if (data.limit) state.limit = Number(data.limit) || state.limit;
       }
 
+      console.log('📊 Processed rows:', rows);
+      if (rows.length > 0) console.log('First row sample:', rows[0]);
+      
       state.allRows = rows;
       state.total = total;
       renderCurrentView();
@@ -533,37 +547,16 @@
     }
 
     if (els.keyword) {
-      els.keyword.addEventListener(
-        'input',
-        debounce(() => {
+      els.keyword.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
           state.page = 1;
           state.filters.keyword = (els.keyword.value || '').trim();
+          state.filters.status = (els.status && els.status.value) || '';
+          state.filters.from = (els.from && els.from.value) || '';
+          state.filters.to = (els.to && els.to.value) || '';
           loadOrders({ page: 1 });
-        }, 500)
-      );
-    }
-
-    if (els.status) {
-      els.status.addEventListener('change', () => {
-        state.page = 1;
-        state.filters.status = els.status.value || '';
-        loadOrders({ page: 1 });
-      });
-    }
-
-    if (els.from) {
-      els.from.addEventListener('change', () => {
-        state.page = 1;
-        state.filters.from = els.from.value || '';
-        loadOrders({ page: 1 });
-      });
-    }
-
-    if (els.to) {
-      els.to.addEventListener('change', () => {
-        state.page = 1;
-        state.filters.to = els.to.value || '';
-        loadOrders({ page: 1 });
+        }
       });
     }
 

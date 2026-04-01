@@ -370,6 +370,18 @@
         loadBooks({ page: 1 });
       });
     }
+    if (els.keyword) {
+      els.keyword.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          state.page = 1;
+          state.filters.keyword = (els.keyword && els.keyword.value) || '';
+          state.filters.category = (els.category && els.category.value) || '';
+          state.filters.price = (els.price && els.price.value) || '';
+          loadBooks({ page: 1 });
+        }
+      });
+    }
     if (els.btnRefresh) {
       els.btnRefresh.addEventListener('click', () => {
         if (els.keyword) els.keyword.value = '';

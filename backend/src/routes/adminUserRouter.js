@@ -16,7 +16,7 @@ const router = express.Router();
  *   get:
  *     tags: [Admin Users]
  *     summary: Lấy danh sách người dùng (có phân trang)
- *     description: Lấy danh sách những người dùng với khả năng tìm kiếm theo tên/email và lọc theo vai trò
+ *     description: Lấy danh sách người dùng với khả năng tìm kiếm theo tên/email/SĐT và lọc theo vai trò
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -40,8 +40,16 @@ const router = express.Router();
  *         name: keyword
  *         schema:
  *           type: string
- *         example: "an"
- *         description: Từ khóa tìm kiếm theo tên (full_name) hoặc email
+ *         example: "Nguyễn"
+ *         description: Từ khóa tìm kiếm (được sử dụng cùng với searchType)
+ *       - in: query
+ *         name: searchType
+ *         schema:
+ *           type: string
+ *           enum: [all, name, email, phone]
+ *           default: all
+ *         example: "name"
+ *         description: Loại tìm kiếm - all (tất cả), name (theo tên), email (theo email), phone (theo số điện thoại)
  *       - in: query
  *         name: role
  *         schema:

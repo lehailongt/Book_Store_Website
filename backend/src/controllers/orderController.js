@@ -1,14 +1,16 @@
 import OrderModel from '../models/orderModel.js';
 import CartModel from '../models/cartModel.js';
 import BookModel from '../models/bookModel.js';
+import jwt from 'jsonwebtoken';
 
 function getTokenUserId(token) {
     if (!token) return null;
     try {
-        const decoded = Buffer.from(token.replace('Bearer ', ''), 'base64').toString('utf-8');
-        const parsed = JSON.parse(decoded);
-        return parsed.id;
+        const bearerToken = token.replace(/^Bearer\s+/i, '');
+        const decoded = jwt.verify(bearerToken, process.env.JWT_SECRET);
+        return decoded.id;
     } catch (e) {
+        console.error('Token decode error:', e.message);
         return null;
     }
 }
