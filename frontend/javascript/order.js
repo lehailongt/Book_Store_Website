@@ -70,12 +70,12 @@ function renderOrderDetails(order) {
     html += `<p style="margin-top: 10px;"><strong>Tổng thanh toán:</strong> ${formatPrice(total)}đ</p>`;
 
     html += '<hr style="margin: 15px 0;">';
-    html += '<h4>Thông tin giao hàng</h4>';
+    html += '<h4>Địa chỉ giao hàng</h4>';
     const addr = order.delivery_address || 'Chưa cập nhật';
     html += `<p>${addr}</p>`;
 
     const status = order.status || 'shipped';
-    html += `<p><strong>Trạng thái:</strong> ${status}</p>`;
+    html += `<p><strong>Trạng thái đơn hàng:</strong> ${status}</p>`;
     html += '</div>';
 
     return html;
@@ -144,7 +144,7 @@ async function renderOrdersForUser() {
                 <td>${formatPrice(total)}đ</td>
                 <td><span class="badge badge-${statusBadge}">${status}</span></td>
                 <td>
-                    <button class="btn btn-sm btn-outline-primary view-btn" style="padding: 4px 8px; font-size: 12px;">Xem</button>
+                    <button class="btn btn-sm btn-outline-primary view-btn" style="padding: 4px 8px; font-size: 12px;">Xem chi tiết</button>
                 </td>
             `;
 

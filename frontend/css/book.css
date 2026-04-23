@@ -289,6 +289,10 @@
     height: 100%;
 }
 
+.book-item:hover {
+    cursor: pointer
+}
+
 .books-grid.list-view .book-item {
     flex-direction: row;
     height: auto;

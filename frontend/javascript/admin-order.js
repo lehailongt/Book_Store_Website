@@ -134,7 +134,6 @@
       els.detailCreated = document.getElementById('detail-createdAt');
       els.detailItems = document.getElementById('detail-items');
       els.detailAddress = document.getElementById('detail-address');
-      els.detailPayment = document.getElementById('detail-payment');
     }
 
     if (els.pageSize) {
@@ -396,15 +395,8 @@
       .join('');
 
     // Address
-    const addr = order.address || order.shippingAddress || {};
-    const fullAddr = [addr.line1, addr.line2, addr.ward, addr.district, addr.province]
-      .filter(Boolean)
-      .join(', ');
-    els.detailAddress.textContent = fullAddr || '—';
-
-    // Payment
-    const payment = order.payment || order.paymentMethod || 'COD';
-    els.detailPayment.textContent = payment;
+    const addr = order.deliveryAddress || order.address || order.shippingAddress || '';
+    els.detailAddress.textContent = addr || '—';
   }
 
   async function loadOrders({ page = 1, limit = state.limit } = {}) {

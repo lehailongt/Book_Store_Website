@@ -263,3 +263,46 @@ export async function adminGetBookById(req, res) {
     });
   }
 }
+
+export async function adminUploadBookImage(req, res) {
+  try {
+    const { bookId } = req.body;
+    
+    if (!req.file) {
+      return res.status(400).json({ message: 'Không có file được upload' });
+    }
+    
+    if (!bookId) {
+      return res.status(400).json({ message: 'Thiếu bookId' });
+    }
+
+    const fs = await import('fs').then(m => m.promises);
+    const path = await import('path');
+    const uploadDir = path.join(path.dirname(req.file.path), '..');
+    
+    // Rename file to {bookId}.png
+    const oldPath = req.file.path;
+    const newFilename = `${bookId}.png`;
+    const newPath = path.join(path.dirname(oldPath), newFilename);
+    
+    // Remove old file if exists
+    try {
+      await fs.unlink(newPath);
+    } catch (e) {
+      // File doesn't exist, that's fine
+    }
+    
+    // Rename the uploaded file
+    await fs.rename(oldPath, newPath);
+    
+    const imageUrl = `images/books/${newFilename}`;
+    
+    res.json({ 
+      message: 'Upload ảnh sách thành công',
+      imageUrl 
+    });
+  } catch (err) {
+    console.error('Error in adminUploadBookImage:', err);
+    res.status(500).json({ message: 'Lỗi upload ảnh sách: ' + err.message });
+  }
+}

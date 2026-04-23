@@ -3,6 +3,9 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
+import multer from 'multer';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import bookRouter from './routes/bookRouter.js';
 import userRouter from './routes/userRouter.js';
 import adminRouter from './routes/adminRouter.js';
@@ -10,6 +13,9 @@ import cartRouter from './routes/cartRouter.js';
 import orderRouter from './routes/orderRouter.js';
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -62,7 +68,35 @@ app.use(cors({
 }));
 app.use(express.json());
 
+// Setup multer for file uploads to frontend/images/books/
+const uploadDir = path.join(__dirname, '../../frontend/images/books');
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-temp${path.extname(file.originalname)}`);
+    }
+});
+
+const upload = multer({ 
+    storage,
+    fileFilter: (req, file, cb) => {
+        const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (allowedMimes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error('Invalid file type. Only JPEG, PNG, GIF, and WebP are allowed.'));
+        }
+    }
+});
+
+app.locals.upload = upload;
+
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+
+// Serve static files from frontend images directory
+app.use('/images', express.static(path.join(__dirname, '../../frontend/images')));
 
 app.use('/api/admin', adminRouter);
 app.use('/api/books', bookRouter);

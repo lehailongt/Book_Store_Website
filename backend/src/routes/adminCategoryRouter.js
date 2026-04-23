@@ -57,7 +57,7 @@ const router = express.Router();
  *                       category_id:
  *                         type: integer
  *                         example: 1
- *                       category_name:
+ *                       categoryName:
  *                         type: string
  *                         example: "Tiểu thuyết"
  *                       book_count:
@@ -84,7 +84,7 @@ const router = express.Router();
  *                   properties:
  *                     sortBy: 
  *                       type: string
- *                       example: "category_name"
+ *                       example: "categoryName"
  *                     sortOrder:
  *                       type: string
  *                       example: "DESC"
@@ -145,9 +145,9 @@ router.get('/:id', adminGetCategoryById);
  *           schema:
  *             type: object
  *             required:
- *               - category_name
+ *               - categoryName
  *             properties:
- *               category_name:
+ *               categoryName:
  *                 type: string
  *                 minLength: 1
  *                 maxLength: 50

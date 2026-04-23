@@ -518,6 +518,8 @@
         const desc = document.getElementById('cb-description').value.trim();
         const publishDate = document.getElementById('cb-publish-date').value;
         const categories = getSelectedCategoriesFromTags('cb-categories-tags');
+        const fileInput = document.getElementById('cb-image-file');
+        const file = fileInput && fileInput.files && fileInput.files[0];
 
         clearErr('cb-name-err', 'cb-author-err', 'cb-price-err', 'cb-categories-err');
         let valid = true;
@@ -532,14 +534,41 @@
         const submitBtn = document.getElementById('cb-submit-btn');
         if (submitBtn) submitBtn.disabled = true;
         try {
-          const res = await fetch(ADMIN_API_BOOKS, {
+          // First, create the book to get the ID
+          const createRes = await fetch(ADMIN_API_BOOKS, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
             body: JSON.stringify({ bookName: nameVal, authorName: authorVal, price, description: desc, publishDate: publishDate || null, imageUrl: null, categories })
           });
-          const data = await res.json().catch(() => null);
-          if (!res.ok) throw new Error((data && (data.message || data.error)) || 'Lỗi thêm sách');
-          const bookId = data.bookId;
+          const createData = await createRes.json().catch(() => null);
+          if (!createRes.ok) throw new Error((createData && (createData.message || createData.error)) || 'Lỗi thêm sách');
+          const bookId = createData.bookId;
+
+          // If image file is selected, upload it
+          let imageUrl = null;
+          if (file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('bookId', bookId);
+            
+            const uploadRes = await fetch(`${ADMIN_API_BOOKS}/upload`, {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${getToken()}` },
+              body: formData
+            });
+            const uploadData = await uploadRes.json().catch(() => null);
+            if (!uploadRes.ok) throw new Error((uploadData && (uploadData.message || uploadData.error)) || 'Lỗi upload ảnh');
+            imageUrl = uploadData.imageUrl;
+
+            // Update book with image URL
+            if (imageUrl) {
+              await fetch(`${ADMIN_API_BOOKS}/${bookId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+                body: JSON.stringify({ bookName: nameVal, authorName: authorVal, price, description: desc, publishDate: publishDate || null, imageUrl, categories })
+              });
+            }
+          }
 
           alert('Thêm sách thành công');
           document.getElementById('createBookModal').style.display = 'none';
@@ -569,6 +598,8 @@
         const desc = document.getElementById('eb-description').value.trim();
         const publishDate = document.getElementById('eb-publish-date').value;
         const categories = getSelectedCategoriesFromTags('eb-categories-tags');
+        const fileInput = document.getElementById('eb-image-file');
+        const file = fileInput && fileInput.files && fileInput.files[0];
 
         clearErr('eb-name-err', 'eb-author-err', 'eb-price-err', 'eb-categories-err');
         let valid = true;
@@ -585,7 +616,23 @@
         try {
           // Get current imageUrl from existing book
           const book = state.rows.find(b => String(b.id || b.book_id) === String(id));
-          const imageUrl = (book && book.image_url) || null;
+          let imageUrl = (book && book.image_url) || null;
+
+          // If image file is selected, upload it
+          if (file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('bookId', id);
+            
+            const uploadRes = await fetch(`${ADMIN_API_BOOKS}/upload`, {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${getToken()}` },
+              body: formData
+            });
+            const uploadData = await uploadRes.json().catch(() => null);
+            if (!uploadRes.ok) throw new Error((uploadData && (uploadData.message || uploadData.error)) || 'Lỗi upload ảnh');
+            imageUrl = uploadData.imageUrl;
+          }
 
           const res = await fetch(`${ADMIN_API_BOOKS}/${id}`, {
             method: 'PUT',

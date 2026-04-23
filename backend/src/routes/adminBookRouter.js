@@ -5,6 +5,7 @@ import {
 	adminUpdateBook,
 	adminDeleteBook,
 	adminGetCategories,
+	adminUploadBookImage,
 } from '../controllers/adminBookController.js';
 
 const router = express.Router();
@@ -263,6 +264,14 @@ router.get('/categories', adminGetCategories);
  *         description: Lỗi server
  */
 router.post('/', adminCreateBook);
+
+router.post('/upload', (req, res, next) => {
+	const upload = req.app.locals.upload;
+	if (!upload) {
+		return res.status(500).json({ message: 'Upload middleware not configured' });
+	}
+	upload.single('file')(req, res, next);
+}, adminUploadBookImage);
 
 /**
  * @swagger
