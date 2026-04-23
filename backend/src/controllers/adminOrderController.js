@@ -73,7 +73,7 @@ export async function adminGetOrders(req, res) {
     const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
 
     const [rows] = await pool.query(
-      `SELECT o.order_id, o.total_amount, o.status, o.created_at, o.delivery_address, u.full_name, u.email
+      `SELECT o.order_id, o.total_amount, o.status, o.created_at, o.delivery_address, u.full_name, u.email, u.phone_number
        FROM orders o
        JOIN users u ON u.user_id = o.user_id
        ${whereSql}
@@ -91,6 +91,7 @@ export async function adminGetOrders(req, res) {
     const data = rows.map((o) => ({
       orderId: o.order_id,
       customerName: o.full_name,
+      customerPhone: o.phone_number || '',
       totalAmount: Number(o.total_amount || 0),
       status: mapDbOrderStatusToUi(o.status),
       deliveryAddress: o.delivery_address,
@@ -109,7 +110,7 @@ export async function adminGetOrderById(req, res) {
     const id = req.params.id;
     const [rows] = await pool.query(
       `SELECT o.order_id, o.total_amount, o.status, o.created_at, o.delivery_address,
-              u.full_name, u.email
+              u.full_name, u.email, u.phone_number
        FROM orders o JOIN users u ON u.user_id = o.user_id
        WHERE o.order_id = ?`,
       [id]
@@ -132,6 +133,7 @@ export async function adminGetOrderById(req, res) {
       createdAt: o.created_at,
       deliveryAddress: o.delivery_address,
       customerName: o.full_name,
+      customerPhone: o.phone_number || '',
       customerEmail: o.email,
       items: items.map((it) => ({
         orderDetailId: it.order_detail_id,

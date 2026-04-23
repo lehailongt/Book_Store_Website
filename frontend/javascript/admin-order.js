@@ -129,6 +129,7 @@
       els.modalClose = els.modal.querySelector('[data-close]');
       els.detailId = document.getElementById('detail-id');
       els.detailCustomer = document.getElementById('detail-customer');
+      els.detailPhone = document.getElementById('detail-phone');
       els.detailStatus = document.getElementById('detail-status');
       els.detailTotal = document.getElementById('detail-total');
       els.detailCreated = document.getElementById('detail-createdAt');
@@ -379,6 +380,8 @@
     els.detailId.textContent = `#${code}`;
     const customer = (order.customer && (order.customer.name || order.customer.email)) || order.customerName || order.userName || 'N/A';
     els.detailCustomer.textContent = customer;
+    const phone = (order.customerPhone && order.customerPhone.toString().trim()) || (order.phone && order.phone.toString().trim()) || (order.customer && order.customer.phone && order.customer.phone.toString().trim()) || 'Chưa cập nhật';
+    els.detailPhone.textContent = phone;
     els.detailStatus.innerHTML = statusBadge(order.status || 'Pending');
     els.detailTotal.textContent = `${Number(order.totalAmount != null ? order.totalAmount : order.total || 0).toLocaleString('vi-VN')} đ`;
     els.detailCreated.textContent = formatDate(order.createdAt || order.created_at);

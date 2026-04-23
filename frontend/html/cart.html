@@ -57,8 +57,26 @@
                     <div class="summary-card">
                         <h3>Thông Tin Giao Hàng</h3>
                         <div class="form-group">
-                            <label for="shipAddress">Địa chỉ nhận hàng</label>
-                            <input type="text" id="shipAddress" class="form-control" placeholder="Nhập địa chỉ...">
+                            <label for="shipProvince">Tỉnh/Thành phố <span style="color:red;">*</span></label>
+                            <select id="shipProvince" class="form-control">
+                                <option value="">-- Chọn tỉnh/thành phố --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="shipDistrict">Quận/Huyện <span style="color:red;">*</span></label>
+                            <select id="shipDistrict" class="form-control" disabled>
+                                <option value="">-- Chọn quận/huyện --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="shipWard">Xã/Phường <span style="color:red;">*</span></label>
+                            <select id="shipWard" class="form-control" disabled>
+                                <option value="">-- Chọn xã/phường --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="shipAddress">Số nhà/Địa chỉ chi tiết <span style="color:red;">*</span></label>
+                            <input type="text" id="shipAddress" class="form-control" placeholder="Nhập số nhà, tên đường...">
                         </div>
                     </div>
 
