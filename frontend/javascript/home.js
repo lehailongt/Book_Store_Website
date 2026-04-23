@@ -149,6 +149,18 @@ function renderPopularBooks(books) {
         btn.addEventListener('click', handleAddToCart);
     });
 
+    // Add click event to book cards to navigate to detail
+    document.querySelectorAll('.book-card-popular').forEach(card => {
+        card.addEventListener('click', (e) => {
+            // Don't navigate if clicking the add to cart button
+            if (e.target.closest('.btn-add-to-cart')) {
+                return;
+            }
+            const bookId = card.dataset.bookId;
+            window.location.href = `book-detail.html?id=${bookId}`;
+        });
+    });
+
     // Setup carousel navigation
     setupCarouselNavigation();
 }

@@ -333,7 +333,7 @@ function createBookElement(book) {
 // View detail helper
 function viewBookDetail(book) {
     localStorage.setItem('selectedBook', JSON.stringify(book));
-    window.location.href = './book-detail.html?id=' + encodeURIComponent(book.id);
+    window.location.href = `book-detail.html?id=${encodeURIComponent(book.id)}`;
 }
 
 // Wishlist Management

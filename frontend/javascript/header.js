@@ -45,6 +45,7 @@ function renderHeader() {
         if (role === 'admin') {
             menuItems = `
                 <a href="./admin-dashboard.html" class="dropdown-item"><i class="bi bi-speedometer2"></i> Trang Quản Trị</a>
+                <a href="./order.html" class="dropdown-item"><i class="bi bi-bag-check"></i> Đơn Hàng Của Tôi</a>
             `;
         } else {
             menuItems = `
