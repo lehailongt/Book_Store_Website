@@ -147,6 +147,7 @@
     },
     rows: [],
     allRows: [],
+    sort: { sortBy: 'id', sortOrder: 'DESC' },  // ← Thêm sort state
   };
 
   //=========================
@@ -189,13 +190,122 @@
     return Number.isFinite(n) && n > 0 ? n : PAGE_SIZE_DEFAULT;
   }
 
+  function initSortHeaders() {
+    const thead = document.querySelector('#user-table thead tr');
+    if (!thead) return;
+
+    const ths = thead.querySelectorAll('th');
+    ths.forEach((th) => {
+      const name = th.textContent.trim().toLowerCase();
+      if (name.includes('họ tên')) th.dataset.sortField = 'full_name';
+      else if (name.includes('email')) th.dataset.sortField = 'email';
+      else if (name.includes('tổng tiền')) th.dataset.sortField = 'total_spent';
+      else if (name.includes('vai trò')) th.dataset.sortField = 'role';
+    });
+  }
+
+  function updateSortIndicators() {
+    const thead = document.querySelector('#user-table thead tr');
+    if (!thead) return;
+
+    const ths = thead.querySelectorAll('th');
+    ths.forEach((th) => {
+      const oldSpan = th.querySelector('.sort-indicator');
+      if (oldSpan) oldSpan.remove();
+
+      const fieldName = th.dataset.sortField || '';
+      if (fieldName !== state.sort.sortBy) return;
+
+      const indicator = state.sort.sortOrder === 'ASC' ? '▲' : '▼';
+      const span = document.createElement('span');
+      span.className = 'sort-indicator';
+      span.textContent = ` ${indicator}`;
+      span.style.marginLeft = '5px';
+      span.style.color = '#3b82f6';
+      span.style.fontSize = '12px';
+      th.appendChild(span);
+    });
+  }
+
+  function bindSortListeners() {
+    const thead = document.querySelector('#user-table thead tr');
+    if (!thead) return;
+
+    const ths = thead.querySelectorAll('th');
+    ths.forEach((th) => {
+      const fieldName = th.dataset.sortField || '';
+      if (!fieldName) return;
+      if (th.dataset.sortBound === '1') return;
+
+      th.dataset.sortBound = '1';
+      th.style.cursor = 'pointer';
+      th.addEventListener('click', () => {
+        if (state.sort.sortBy === fieldName) {
+          state.sort.sortOrder = state.sort.sortOrder === 'ASC' ? 'DESC' : 'ASC';
+        } else {
+          state.sort.sortBy = fieldName;
+          state.sort.sortOrder = 'ASC';
+        }
+        state.page = 1;
+        renderCurrentView();
+      });
+    });
+  }
+
+  function applyClientSort(rows) {
+    if (!Array.isArray(rows) || rows.length === 0) return [];
+    const sorted = [...rows];
+    const factor = state.sort.sortOrder === 'ASC' ? 1 : -1;
+
+    sorted.sort((a, b) => {
+      let aVal, bVal;
+
+      if (state.sort.sortBy === 'full_name') {
+        aVal = String(a.full_name || '').toLowerCase();
+        bVal = String(b.full_name || '').toLowerCase();
+        return aVal.localeCompare(bVal, 'vi') * factor;
+      }
+
+      if (state.sort.sortBy === 'email') {
+        aVal = String(a.email || '').toLowerCase();
+        bVal = String(b.email || '').toLowerCase();
+        return aVal.localeCompare(bVal, 'vi') * factor;
+      }
+
+      if (state.sort.sortBy === 'total_spent') {
+        aVal = Number(a.total_spent || 0);
+        bVal = Number(b.total_spent || 0);
+        return (aVal - bVal) * factor;
+      }
+
+      if (state.sort.sortBy === 'role') {
+        aVal = String(a.role || '').toLowerCase();
+        bVal = String(b.role || '').toLowerCase();
+        return aVal.localeCompare(bVal, 'vi') * factor;
+      }
+
+      if (state.sort.sortBy === 'id') {
+        aVal = String(a.id || a._id || '').toLowerCase();
+        bVal = String(b.id || b._id || '').toLowerCase();
+        return aVal.localeCompare(bVal, 'vi', { numeric: true }) * factor;
+      }
+
+      return 0;
+    });
+
+    return sorted;
+  }
+
   function renderCurrentView() {
-    state.limit = getSelectedPageSize(state.allRows.length);
-    state.total = state.allRows.length;
+    const sorted = applyClientSort(state.allRows || []);
+    state.limit = getSelectedPageSize(sorted.length);
+    state.total = sorted.length;
     const start = (state.page - 1) * state.limit;
-    state.rows = state.allRows.slice(start, start + state.limit);
+    state.rows = sorted.slice(start, start + state.limit);
+    
     renderRows();
     renderPagination();
+    updateSortIndicators();
   }
 
   //=========================
@@ -248,6 +358,7 @@
             <td>${name}</td>
             <td>${email}</td>
             <td>${escapeHtml(u.phone_number || '')}</td>
+            <td style="text-align: right; font-weight: 500; color: #10b981;">${Number(u.total_spent || 0).toLocaleString('vi-VN')} đ</td>
             <td>${roleBadgeHtml}</td>
             <td>
               <button class="btn btn-link btn-edit" title="Chỉnh sửa người dùng"><i class="bi bi-pencil-square"></i></button>
@@ -364,6 +475,8 @@
       state.allRows = rows;
       state.total = total;
       renderCurrentView();
+      initSortHeaders();
+      bindSortListeners();
     } catch (err) {
       console.error(err);
       showToast(err.message || 'Tải danh sách người dùng thất bại', 'error');
@@ -633,6 +746,8 @@
   function init() {
     if (!ensureAdmin()) return;
     cacheElements();
+    initSortHeaders();
+    bindSortListeners();
     bindEvents();
     loadUsers({ page: 1 });
   }

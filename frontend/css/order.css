@@ -514,3 +514,7 @@
         color: #000;
     }
 }
+
+.view-btn {
+    cursor: pointer;
+}

@@ -2,7 +2,7 @@
 
 const API_BASE = 'http://localhost:5001/api';
 const API_CART = `${API_BASE}/cart`;
-const API_PROVINCES = 'https://provinces.open-api.vn/api/p/';
+const API_PROVINCES = 'https://provinces.open-api.vn/api/v1/p/';
 
 function getToken() {
     return localStorage.getItem('accessToken') || localStorage.getItem('token') || '';

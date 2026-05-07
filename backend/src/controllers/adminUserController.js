@@ -86,9 +86,12 @@ export async function adminGetUsers(req, res) {
     const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
 
     const [rows] = await pool.query(
-      `SELECT u.user_id AS id, u.full_name, u.email, u.role, u.date_of_birth, u.phone_number, u.image_url, u.user_id
+      `SELECT u.user_id AS id, u.full_name, u.email, u.role, u.date_of_birth, u.phone_number, u.image_url, u.user_id,
+              COALESCE(SUM(o.total_amount), 0) AS total_spent
        FROM users u
+       LEFT JOIN orders o ON u.user_id = o.user_id
        ${whereSql}
+       GROUP BY u.user_id, u.full_name, u.email, u.role, u.date_of_birth, u.phone_number, u.image_url
        ORDER BY u.user_id DESC
        LIMIT ? OFFSET ?`,
       [...params, limit, offset]
