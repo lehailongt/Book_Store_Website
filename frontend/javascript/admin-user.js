@@ -197,7 +197,8 @@
     const ths = thead.querySelectorAll('th');
     ths.forEach((th) => {
       const name = th.textContent.trim().toLowerCase();
-      if (name.includes('họ tên')) th.dataset.sortField = 'full_name';
+      if (name === 'id') th.dataset.sortField = 'id';
+      else if (name.includes('họ tên')) th.dataset.sortField = 'full_name';
       else if (name.includes('email')) th.dataset.sortField = 'email';
       else if (name.includes('tổng tiền')) th.dataset.sortField = 'total_spent';
       else if (name.includes('vai trò')) th.dataset.sortField = 'role';
@@ -450,7 +451,7 @@
       const token = getToken();
       console.log('   Token:', token ? `${token.substring(0, 20)}...` : '(missing)');
       console.log('   URL:', `${ADMIN_API_USERS}?${params.toString()}`);
-
+      // http://localhost:5001/api/admin/users?
       const data = await fetchAdmin(`/users?${params.toString()}`, {
         method: 'GET',
       });

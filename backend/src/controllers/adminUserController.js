@@ -90,8 +90,8 @@ export async function adminGetUsers(req, res) {
               COALESCE(SUM(o.total_amount), 0) AS total_spent
        FROM users u
        LEFT JOIN orders o ON u.user_id = o.user_id
-       ${whereSql}
-       GROUP BY u.user_id, u.full_name, u.email, u.role, u.date_of_birth, u.phone_number, u.image_url
+       ${whereSql} and o.status = 'delivered'
+       GROUP BY u.user_id, u.full_name
        ORDER BY u.user_id DESC
        LIMIT ? OFFSET ?`,
       [...params, limit, offset]
